@@ -10,7 +10,10 @@
     <field name="sparams_" mapping="blob"/>  
     <field name="uparams_" mapping="blob"/>  
   </class>
-    
+   
+  <class name="L1TMuonEndCapParams">
+  </class>
+ 
   <class name="l1t::LUT">
     <field name="data_" mapping="blob"/>  
   </class>

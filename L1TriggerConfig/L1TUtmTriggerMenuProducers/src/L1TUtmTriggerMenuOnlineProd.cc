@@ -26,7 +26,8 @@ public:
     ~L1TUtmTriggerMenuOnlineProd(void){}
 };
 
-L1TUtmTriggerMenuOnlineProd::L1TUtmTriggerMenuOnlineProd(const edm::ParameterSet& iConfig) : L1ConfigOnlineProdBaseExt<L1TUtmTriggerMenuO2ORcd,L1TUtmTriggerMenu>(iConfig) {}
+L1TUtmTriggerMenuOnlineProd::L1TUtmTriggerMenuOnlineProd(const edm::ParameterSet& iConfig) : 
+L1ConfigOnlineProdBaseExt<L1TUtmTriggerMenuO2ORcd,L1TUtmTriggerMenu>(iConfig) {}
 
 std::shared_ptr<L1TUtmTriggerMenu> L1TUtmTriggerMenuOnlineProd::newObject(const std::string& objectKey, const L1TUtmTriggerMenuO2ORcd& record) {
     using namespace edm::es;
@@ -72,3 +73,4 @@ std::shared_ptr<L1TUtmTriggerMenu> L1TUtmTriggerMenuOnlineProd::newObject(const 
 
 //define this as a plug-in
 DEFINE_FWK_EVENTSETUP_MODULE(L1TUtmTriggerMenuOnlineProd);
+
