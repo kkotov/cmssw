@@ -57,6 +57,7 @@ public:
 	 Open_LUTs,
 	 EtaTrackFinder,
 	 Extrapolation_21, 
+	 DisableNewAlgo,
 	 NUM_CONFIG_PARAMS};
 
   // after initial integration with downstream code, a small update will change:
