@@ -160,7 +160,10 @@ public:
   // print parameters to stream:
   void print(std::ostream&) const;
   friend std::ostream& operator<<(std::ostream& o, const L1TMuonBarrelParams & p) { p.print(o); return o; }
- private:
+///KK
+/// private:
+public:
+///KK
   unsigned version_;
   unsigned fwVersion_;
   

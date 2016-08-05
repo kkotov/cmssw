@@ -212,7 +212,10 @@ public:
   void print(std::ostream&) const;
   friend std::ostream& operator<<(std::ostream& o, const L1TMuonGlobalParams & p) { p.print(o); return o; }
 
-private:
+///KK
+///private:
+public:
+///KK
   unsigned version_;
   unsigned fwVersion_;
 
