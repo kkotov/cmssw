@@ -1,4 +1,6 @@
-#include "L1TriggerConfig/L1TMuonBarrelParamsProducers/src/MuonBarrelParamsHelper.h"
+#include "MuonBarrelParamsHelper.h"
+#include "CondFormats/L1TObjects/interface/L1TriggerLutFile.h"
+#include "FWCore/ParameterSet/interface/FileInPath.h"
 
 using namespace l1t;
 
@@ -26,7 +28,7 @@ void MuonBarrelParamsHelper::configFromPy(std::map<std::string, int>& allInts, s
 	std::vector<MuonBarrelParamsHelper::LUT> pta_lut(0); pta_lut.reserve(19);
 	std::vector<int> pta_threshold(6); pta_threshold.reserve(9);
 	if ( load_pt(pta_lut,pta_threshold, allInts["PT_Assignment_nbits_Phi"], AssLUTpath) != 0 ) {
-	  cout << "Can not open files to load pt-assignment look-up tables for L1TMuonBarrelTrackProducer!" << endl;
+	  std::cout << "Can not open files to load pt-assignment look-up tables for L1TMuonBarrelTrackProducer!" << std::endl;
 	}
 	setpta_lut(pta_lut);
 	setpta_threshold(pta_threshold);
@@ -34,7 +36,7 @@ void MuonBarrelParamsHelper::configFromPy(std::map<std::string, int>& allInts, s
 	///Read Phi assignment Luts
 	std::vector<MuonBarrelParamsHelper::LUT> phi_lut(0); phi_lut.reserve(2);
 	if ( load_phi(phi_lut, allInts["PHI_Assignment_nbits_Phi"], allInts["PHI_Assignment_nbits_PhiB"], AssLUTpath) != 0 ) {
-	  cout << "Can not open files to load phi-assignment look-up tables for L1TMuonBarrelTrackProducer!" << endl;
+	  std::cout << "Can not open files to load phi-assignment look-up tables for L1TMuonBarrelTrackProducer!" << std::endl;
 	}
 	setphi_lut(phi_lut);
 
@@ -97,7 +99,7 @@ void MuonBarrelParamsHelper::configFromPy(std::map<std::string, int>& allInts, s
 	///Read Extrapolation Luts
 	std::vector<L1TMuonBarrelParams::LUTParams::extLUT> ext_lut(0); ext_lut.reserve(12);
 	if ( load_ext(ext_lut, allInts["PHI_Assignment_nbits_Phi"], allInts["PHI_Assignment_nbits_PhiB"]) != 0 ) {
-	  cout << "Can not open files to load extrapolation look-up tables for L1TMuonBarrelTrackProducer!" << endl;
+	  std::cout << "Can not open files to load extrapolation look-up tables for L1TMuonBarrelTrackProducer!" << std::endl;
 	}
 	write_->setext_lut(ext_lut);
 
@@ -134,13 +136,13 @@ void MuonBarrelParamsHelper::configFromDB(l1t::TrigSystem& trgSys)
 	      set_DisableNewAlgo(disnewalgo);
 	    }
 
-	    string masks[5] = {"mask_ctrl_N2", "mask_ctrl_N1", "mask_ctrl_0", "mask_ctrl_P1", "mask_ctrl_P2"};
+	    std::string masks[5] = {"mask_ctrl_N2", "mask_ctrl_N1", "mask_ctrl_0", "mask_ctrl_P1", "mask_ctrl_P2"};
 
 	    for(int m=0; m<5; m++)
 	    {
 
 	        if (it->getRowValue<std::string>("register_path").find(masks[m]) != std::string::npos){
-	          string mask_ctrl = it->getRowValue<string>("register_value");
+	          std::string mask_ctrl = it->getRowValue<std::string>("register_value");
 	          const char *hexstring = mask_ctrl.c_str();
 	          ///Converts the last bit from str to int
 	          int mask = (int)strtol((hexstring+7), NULL, 16);
@@ -148,7 +150,7 @@ void MuonBarrelParamsHelper::configFromDB(l1t::TrigSystem& trgSys)
 	          ///All bits must be the same
 	          if(!( mask_all==0x111111 || mask_all==0x222222 || mask_all==0x333333 || mask_all==0x444444 ||
 	             mask_all==0x555555 || mask_all==0x666666 || mask_all==0x777777) )
-	            cerr<<"BMTF: Cannot re-emulate properly. Individual link masking cannot be handled."<<endl;
+	            std::cerr<<"BMTF: Cannot re-emulate properly. Individual link masking cannot be handled."<<std::endl;
 
 	          if((mask&1)>0)  {
 	             for(int sec=0; sec<12; sec++){
@@ -280,7 +282,7 @@ enum PtAssMethod { PT12L,  PT12H,  PT13L,  PT13H,  PT14L,  PT14H,
                    NODEF };
 
   // get directory name
-  string pta_str = "";
+  std::string pta_str = "";
   // precision : in the look-up tables the following precision is used :
   // phi ...12 bits (address) and  pt ...5 bits
   // now convert phi and phib to the required precision
@@ -313,9 +315,9 @@ enum PtAssMethod { PT12L,  PT12H,  PT13L,  PT13H,  PT14L,  PT14H,
     }
 
     // assemble file name
-    string lutpath = AssLUTpath;
-    edm::FileInPath lut_f = edm::FileInPath(string(lutpath + pta_str + ".lut"));
-    string pta_file = lut_f.fullPath();
+    std::string lutpath = AssLUTpath;
+    edm::FileInPath lut_f = edm::FileInPath(std::string(lutpath + pta_str + ".lut"));
+    std::string pta_file = lut_f.fullPath();
 
     // open file
     L1TriggerLutFile file(pta_file);
@@ -346,7 +348,7 @@ enum PtAssMethod { PT12L,  PT12H,  PT13L,  PT13H,  PT14L,  PT14H,
       //cout<<pam<<"    "<<number<<"   "<<MAX_PTASSMETHA<<endl;
       if ( adr != adr_old ) {
         assert(number);
-        tmplut.insert(make_pair( adr_old, (sum_pt/number) ));
+        tmplut.insert(std::make_pair( adr_old, (sum_pt/number) ));
 
         adr_old = adr;
         number = 0;
@@ -382,7 +384,7 @@ int MuonBarrelParamsHelper::load_phi(std::vector<LUT>& phi_lut,
   int sh_phi  = 12 - nbit_phi;
   int sh_phib = 10 - nbit_phib;
 
-  string phi_str;
+  std::string phi_str;
   // loop over all phi-assignment methods
   for ( int idx = 0; idx < 2; idx++ ) {
     switch ( idx ) {
@@ -391,8 +393,8 @@ int MuonBarrelParamsHelper::load_phi(std::vector<LUT>& phi_lut,
     }
 
     // assemble file name
-    edm::FileInPath lut_f = edm::FileInPath(string(AssLUTpath + phi_str + ".lut"));
-    string phi_file = lut_f.fullPath();
+    edm::FileInPath lut_f = edm::FileInPath(std::string(AssLUTpath + phi_str + ".lut"));
+    std::string phi_file = lut_f.fullPath();
 
     // open file
     L1TriggerLutFile file(phi_file);
@@ -414,7 +416,7 @@ int MuonBarrelParamsHelper::load_phi(std::vector<LUT>& phi_lut,
 
       if ( adr != adr_old ) {
         assert(number);
-        tmplut.insert(make_pair( adr_old, ((sum_phi/number) >> sh_phi) ));
+        tmplut.insert(std::make_pair( adr_old, ((sum_phi/number) >> sh_phi) ));
 
         adr_old = adr;
         number = 0;
@@ -441,7 +443,7 @@ int MuonBarrelParamsESProducer::getPtLutThreshold(int pta_ind, std::vector<int>&
     return pta_threshold[pta_ind];
   }
   else {
-    cerr << "PtaLut::getPtLutThreshold : can not find threshold " << pta_ind << endl;
+    std::cerr << "PtaLut::getPtLutThreshold : can not find threshold " << pta_ind << std::endl;
     return 0;
   }
 
@@ -467,9 +469,9 @@ int MuonBarrelParamsHelper::load_ext(std::vector<L1TMuonBarrelParams::LUTParams:
                      EX15, EX16, EX25, EX26, EX56 };
 
   // get directory name
-  string defaultPath = "L1Trigger/L1TMuon/data/bmtf_luts/";
-  string ext_dir = "LUTs_Ext/";
-  string ext_str = "";
+  std::string defaultPath = "L1Trigger/L1TMuon/data/bmtf_luts/";
+  std::string ext_dir = "LUTs_Ext/";
+  std::string ext_str = "";
 
   // precision : in the look-up tables the following precision is used :
   // phi ...12 bits (low, high), phib ...10 bits (address)
@@ -496,14 +498,14 @@ int MuonBarrelParamsHelper::load_ext(std::vector<L1TMuonBarrelParams::LUTParams:
     }
 
     // assemble file name
-    edm::FileInPath lut_f = edm::FileInPath(string(defaultPath + ext_dir + ext_str + ".lut"));
-    string ext_file = lut_f.fullPath();
+    edm::FileInPath lut_f = edm::FileInPath(std::string(defaultPath + ext_dir + ext_str + ".lut"));
+    std::string ext_file = lut_f.fullPath();
 
     // open file
     L1TriggerLutFile file(ext_file);
     if ( file.open() != 0 ) return -1;
-    //    if ( L1MuDTTFConfig::Debug(1) ) cout << "Reading file : "
-    //                                         << file.getName() << endl;
+    //    if ( L1MuDTTFConfig::Debug(1) ) std::cout << "Reading file : "
+    //                                         << file.getName() << std::endl;
 
     L1TMuonBarrelParams::LUTParams::extLUT tmplut;
 

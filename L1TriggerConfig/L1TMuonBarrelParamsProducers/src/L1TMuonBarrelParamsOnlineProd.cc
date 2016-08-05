@@ -6,8 +6,9 @@
 #include "CondFormats/DataRecord/interface/L1TMuonBarrelParamsRcd.h"
 #include "CondFormats/DataRecord/interface/L1TMuonBarrelParamsO2ORcd.h"
 #include "L1Trigger/L1TCommon/interface/XmlConfigReader.h"
-#include "L1Trigger/L1TMuonBarrel/interface/L1TMuonBarrelParamsHelper.h"
-
+//#include "L1Trigger/L1TMuonBarrel/interface/L1TMuonBarrelParamsHelper.h"
+#include "MuonBarrelParamsHelper.h"
+#include "L1Trigger/L1TCommon/interface/TrigSystem.h"
 #include "xercesc/util/PlatformUtils.hpp"
 using namespace XERCES_CPP_NAMESPACE;
 
@@ -227,12 +228,22 @@ for(auto &conf : payloads[kRS]){
                 output.close();
             }
 
-        L1TMuonBarrelParamsHelper m_params_helper(*(baseSettings.product()) );
+//        L1TMuonBarrelParamsHelper m_params_helper(*(baseSettings.product()) );
+//        m_params_helper.configFromDB(parsedXMLs);
+//        std::shared_ptr< L1TMuonBarrelParams > payload = std::make_shared< L1TMuonBarrelParams >(m_params_helper) ;
+// 
+//        return payload;
+
+//        The commented out code below copies the payload twice
+//        l1t::MuonBarrelParamsHelper *m_params_helper = MuonBarrelParamsHelper::readAndWriteFromEventSetup( baseSettings.product() );
+//        m_params_helper->configFromDB(parsedXMLs);
+
+        // Copy just once in the constructor of L1TMuonBarrelParams:
+        l1t::MuonBarrelParamsHelper m_params_helper( new L1TMuonBarrelParams( *(baseSettings.product()) ) );
         m_params_helper.configFromDB(parsedXMLs);
-        std::shared_ptr< L1TMuonBarrelParams > payload = std::make_shared< L1TMuonBarrelParams >(m_params_helper) ;
+        std::shared_ptr< L1TMuonBarrelParams > payload = std::shared_ptr< L1TMuonBarrelParams >( m_params_helper.getWriteInstance() );
  
         return payload;
-
 }
 
 //define this as a plug-in
