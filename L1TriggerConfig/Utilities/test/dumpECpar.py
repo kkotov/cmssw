@@ -9,34 +9,32 @@ process.MessageLogger.debugModules = cms.untracked.vstring('*')
 process.source = cms.Source("EmptySource")
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1) )
 
-# Generate dummy L1TriggerKeyList
-process.load("CondTools.L1Trigger.L1TriggerKeyListDummy_cff")
-process.load("CondTools.L1Trigger.L1TriggerKeyDummy_cff")
-process.L1TriggerKeyDummy.objectKeys = cms.VPSet(cms.PSet(
-    record = cms.string("L1TMuonEndCapParamsRcd"),
-    type   = cms.string("L1TMuonEndCapParams"),
-    key    = cms.string("dummy")
-))
-
-process.load('L1Trigger.L1TMuonEndCap.fakeMuonEndCapParams_cfi')
+process.load('L1Trigger.L1TMuonEndCap.fakeEmtfParams_cff')
 process.getter = cms.EDAnalyzer("EventSetupRecordDataGetter",
    toGet = cms.VPSet(
-      cms.PSet(record = cms.string('L1TMuonEndcapParamsRcd'),
-               data = cms.vstring('L1TMuonEndcapParams'))
+      cms.PSet(record = cms.string('L1TMuonEndCapParamsRcd'),
+               data = cms.vstring('L1TMuonEndCapParams')),
+      cms.PSet(record = cms.string('L1TMuonEndCapForestRcd'),
+               data = cms.vstring('L1TMuonEndCapForest'))
                    ),
+
    verbose = cms.untracked.bool(True)
 )
 
-process.l1ecw = cms.EDAnalyzer("L1TEndcapWriter")
+process.l1ecw = cms.EDAnalyzer("L1TMuonEndcapWriter")
 
 from CondCore.DBCommon.CondDBSetup_cfi import CondDBSetup
 outputDB = cms.Service("PoolDBOutputService",
                        CondDBSetup,
-                       connect = cms.string('sqlite_file:qwe.db'),
+                       connect = cms.string('sqlite_file:l1config.db'),
                        toPut   = cms.VPSet(
                            cms.PSet(
                                record = cms.string('L1TMuonEndcapParamsRcd'),
                                tag = cms.string("dummy")
+                           ),
+                           cms.PSet(
+                               record = cms.string('L1TMuonEndCapForestRcd'),
+                               tag = cms.string("dummy2")
                            )
                        )
 )

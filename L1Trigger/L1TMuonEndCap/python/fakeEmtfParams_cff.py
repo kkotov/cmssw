@@ -19,7 +19,7 @@ emtfParams = cms.ESProducer(
 
 
 
-emtfParamsSource = cms.ESSource(
+emtfForestSource = cms.ESSource(
 	"EmptyESSource",
 	recordName = cms.string('L1TMuonEndCapForestRcd'),
 	iovIsRunNotTime = cms.bool(True),
@@ -27,7 +27,7 @@ emtfParamsSource = cms.ESSource(
 )
 
 ##EMTF ESProducer. Fills CondFormats from XML files.
-emtfParams = cms.ESProducer(
+emtfForest = cms.ESProducer(
 	"L1TMuonEndCapForestESProducer",
 )
 
