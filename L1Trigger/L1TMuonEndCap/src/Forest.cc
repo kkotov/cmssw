@@ -474,7 +474,7 @@ void L1TForest::appendCorrection(Event* e, Int_t treenum)
 {
 // Update the prediction by appending the next correction.
 
-    Tree* tree = trees[treenum];
+    emtf::Tree* tree = trees[treenum];
     Node* terminalNode = tree->filterEvent(e); 
 
     // Update the event with its new prediction.
@@ -490,13 +490,13 @@ void L1TForest::loadL1TForestFromXML(const char* directory, unsigned int numTree
 // Load a forest that has already been created and stored into XML somewhere.
 
     // Initialize the vector of trees.
-    trees = std::vector<Tree*>(numTrees);
+    trees = std::vector<emtf::Tree*>(numTrees);
 
     // Load the Forest.
     //std::cout << std::endl << "Loading Forest from XML ... " << std::endl;
     for(unsigned int i=0; i < numTrees; i++) 
     {   
-        trees[i] = new Tree(); 
+        trees[i] = new emtf::Tree(); 
 
         std::stringstream ss;
         ss << directory << "/" << i << ".xml";
@@ -568,7 +568,7 @@ void L1TForest::doStochasticRegression(Int_t nodeLimit, Int_t treeLimit, double 
 
     // Prepare some things.
     sortEventVectors(events);
-    trees = std::vector<Tree*>(treeLimit);
+    trees = std::vector<emtf::Tree*>(treeLimit);
 
     // See how long the regression takes.
     TStopwatch timer;
@@ -586,7 +586,7 @@ void L1TForest::doStochasticRegression(Int_t nodeLimit, Int_t treeLimit, double 
     {
         // Build the tree using a random subsample.
         prepareRandomSubsample(fraction);
-        trees[i] = new Tree(subSample);    
+        trees[i] = new emtf::Tree(subSample);    
         trees[i]->buildTree(nodeLimit);
 
         // Fit all of the events based upon the tree we built using
