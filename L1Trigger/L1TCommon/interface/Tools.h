@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <map>
+#include <string.h>
 
 //boost libraries
 #include <boost/lexical_cast.hpp>
@@ -24,14 +25,19 @@ template <class varType> varType convertVariable(const std::string& aVar)
 	}
 	catch (std::exception& e)
 	{
-		std::map<std::string, int> hexnums;
-        	std::string strHexNums("0123456789ABCDEFabcdef");
-	       	for(unsigned int i=0; i<strHexNums.size(); i++)
-	                hexnums[strHexNums.substr(i,1)] = i;
-		if ( aVar.substr(0,2) == "0x" && aVar.substr(2,aVar.size()).find_first_not_of(strHexNums) == std::string::npos)
-			temp = convertFromHexStringToInt(aVar);
-		else
-			throw std::runtime_error(std::string("Method convertVariable error: ") + e.what());
+            // Try old-school c conversion
+            char *endptr = NULL;
+            temp = strtol(aVar.c_str(),&endptr,0);
+            if( *endptr == '\0' ) return temp;
+            else throw std::runtime_error(std::string("Method convertVariable error: ") + e.what());
+///		std::map<std::string, int> hexnums;
+///        	std::string strHexNums("0123456789ABCDEFabcdef");
+///	       	for(unsigned int i=0; i<strHexNums.size(); i++)
+///	                hexnums[strHexNums.substr(i,1)] = i;
+///		if ( aVar.substr(0,2) == "0x" && aVar.substr(2,aVar.size()).find_first_not_of(strHexNums) == std::string::npos)
+///			temp = convertFromHexStringToInt(aVar);
+///		else
+///			throw std::runtime_error(std::string("Method convertVariable error: ") + e.what());
 	}
 
 	return temp;

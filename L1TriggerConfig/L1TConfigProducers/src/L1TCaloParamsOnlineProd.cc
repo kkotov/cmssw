@@ -115,11 +115,11 @@ readCaloLayer2OnlineSettings(l1t::CaloParamsHelper& paramsHelper, std::map<std::
   etSumEtaMax.push_back(conf["HTMHT_maxJetEta"].getValue<int>());
   etSumEtaMax.push_back(conf["towerCountMaxEta"].getValue<int>());
   
-  etSumEtThresh.push_back(conf["ET_towerThreshold"].getValue<int>()); // ETT tower threshold
-  etSumEtThresh.push_back(conf["HT_jetThreshold"].getValue<int>());
-  etSumEtThresh.push_back(conf["MET_towerThreshold"].getValue<int>()); // ETM tower threshold
-  etSumEtThresh.push_back(conf["MHT_jetThreshold"].getValue<int>());
-  etSumEtThresh.push_back(conf["ET_towerThreshold"].getValue<int>());
+  etSumEtThresh.push_back(conf["ET_towerThreshold"].getValue<int>()/2); // ETT tower threshold
+  etSumEtThresh.push_back(conf["HT_jetThreshold"].getValue<int>()/2);
+  etSumEtThresh.push_back(conf["MET_towerThreshold"].getValue<int>()/2); // ETM tower threshold
+  etSumEtThresh.push_back(conf["MHT_jetThreshold"].getValue<int>()/2);
+  etSumEtThresh.push_back(conf["ET_towerThreshold"].getValue<int>()/2);
 
   for (uint i=0; i<5; ++i) {
     paramsHelper.setEtSumEtaMax(i, etSumEtaMax.at(i));
@@ -160,7 +160,7 @@ readCaloLayer2OnlineSettings(l1t::CaloParamsHelper& paramsHelper, std::map<std::
   paramsHelper.setEtSumXPUSLUT( l1t::LUT( (std::istream&)iss4 ) );
   oss.str("");
 
-  paramsHelper.setEgMaxPtHOverE((conf["egammaRelaxationThreshold"].getValue<int>()));
+  paramsHelper.setEgMaxPtHOverE((conf["egammaRelaxationThreshold"].getValue<int>())/2);
   paramsHelper.setEgEtaCut((conf["egammaMaxEta"].getValue<int>()));
 
 
