@@ -463,43 +463,37 @@ void PatternRecognition::process_single_zone(
 
   // Erase roads with quality_code == 0
   // using erase-remove idiom
+  struct {
+    typedef EMTFRoad value_type;
+    bool operator()(const value_type& x) const {
+      return (x.Quality_code() == 0);
+    }
+  } quality_code_zero_pred;
 
-  // // Need to resolve constexpr problem - AWB 21.02.16
-  // struct {
-  //   typedef EMTFRoad value_type;
-  //   constexpr bool operator()(const value_type& x) {
-  //     return (x.Quality_code() == 0);
-  //   }
-  // } quality_code_zero_pred;
-
-  // roads.erase(std::remove_if(roads.begin(), roads.end(), quality_code_zero_pred), roads.end());
+  roads.erase(std::remove_if(roads.begin(), roads.end(), quality_code_zero_pred), roads.end());
 
 }
 
 void PatternRecognition::sort_single_zone(EMTFRoadCollection& roads) const {
   // First, order by key_zhit (highest to lowest)
+  struct {
+    typedef EMTFRoad value_type;
+    bool operator()(const value_type& lhs, const value_type& rhs) const {
+      return lhs.Key_zhit() > rhs.Key_zhit();
+    }
+  } greater_zhit_cmp;
 
-  // // Need to resolve constexpr problem - AWB 21.02.16
-  // struct {
-  //   typedef EMTFRoad value_type;
-  //   constexpr bool operator()(const value_type& lhs, const value_type& rhs) {
-  //     return lhs.Key_zhit() > rhs.Key_zhit();
-  //   }
-  // } greater_zhit_cmp;
-
-  // std::sort(roads.begin(), roads.end(), greater_zhit_cmp);
+  std::sort(roads.begin(), roads.end(), greater_zhit_cmp);
 
   // Second, sort by quality_code (highest to lowest), but preserving the original order if qualities are equal
+  struct {
+    typedef EMTFRoad value_type;
+    bool operator()(const value_type& lhs, const value_type& rhs) const {
+      return lhs.Quality_code() > rhs.Quality_code();
+    }
+  } greater_quality_cmp;
 
-  // // Need to resolve constexpr problem - AWB 21.02.16
-  // struct {
-  //   typedef EMTFRoad value_type;
-  //   constexpr bool operator()(const value_type& lhs, const value_type& rhs) {
-  //     return lhs.Quality_code() > rhs.Quality_code();
-  //   }
-  // } greater_quality_cmp;
-
-  // std::stable_sort(roads.begin(), roads.end(), greater_quality_cmp);
+  std::stable_sort(roads.begin(), roads.end(), greater_quality_cmp);
 
   // Finally, select 3 best
   const size_t n = maxRoadsPerZone_;

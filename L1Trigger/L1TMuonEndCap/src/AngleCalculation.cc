@@ -257,24 +257,22 @@ void AngleCalculation::calculate_angles(EMTFTrack& track) const {
     // In firmware, the track is associated to LCTs by the segment number, which
     // identifies the best strip, but does not resolve the ambiguity in theta.
     // In emulator, this additional logic also resolves the ambiguity in theta.
-
-    // // Need to resolve constexpr problem - AWB 21.02.16
-    // struct {
-    //   typedef EMTFHit value_type;
-    //   constexpr bool operator()(const value_type& lhs, const value_type& rhs) {
-    // 	const int lhs_theta = lhs.Theta_fp();
-    // 	const int rhs_theta = rhs.Theta_fp();
-    //     return std::abs(lhs_theta-theta) < std::abs(rhs_theta-theta);
-    //   }
-    //   int theta;
-    // } less_dtheta_cmp;
-    // less_dtheta_cmp.theta = theta_fp;  // capture
+    struct {
+      typedef EMTFHit value_type;
+      bool operator()(const value_type& lhs, const value_type& rhs) const {
+    	const int lhs_theta = lhs.Theta_fp();
+    	const int rhs_theta = rhs.Theta_fp();
+        return std::abs(lhs_theta-theta) < std::abs(rhs_theta-theta);
+      }
+      int theta;
+    } less_dtheta_cmp;
+    less_dtheta_cmp.theta = theta_fp;  // capture
     
-    // for (int istation = 0; istation < NUM_STATIONS; ++istation) {
-    //   std::stable_sort(st_conv_hits.at(istation).begin(), st_conv_hits.at(istation).end(), less_dtheta_cmp);
-    //   if (st_conv_hits.at(istation).size() > 1)
-    //     st_conv_hits.at(istation).resize(1);  // just the minimum in dtheta
-    // }
+    for (int istation = 0; istation < NUM_STATIONS; ++istation) {
+      std::stable_sort(st_conv_hits.at(istation).begin(), st_conv_hits.at(istation).end(), less_dtheta_cmp);
+      if (st_conv_hits.at(istation).size() > 1)
+        st_conv_hits.at(istation).resize(1);  // just the minimum in dtheta
+    }
 
   }
 
@@ -378,8 +376,9 @@ void AngleCalculation::calculate_angles(EMTFTrack& track) const {
   // Only keep the best segments
   track.Hits().clear();
   
-  // // Need to resolve constexpr problem - AWB 21.02.16
-  // flatten_container(st_conv_hits, track.Hits());
+  EMTFHitCollection tmp_hits = track.Hits();
+  flatten_container(st_conv_hits, tmp_hits);
+  track.set_Hits( tmp_hits );
 }
 
 void AngleCalculation::calculate_bx(EMTFTrack& track) const {
@@ -414,17 +413,14 @@ void AngleCalculation::calculate_bx(EMTFTrack& track) const {
 void AngleCalculation::erase_tracks(EMTFTrackCollection& tracks) const {
   // Erase tracks with rank == 0
   // using erase-remove idiom
+  struct {
+    typedef EMTFTrack value_type;
+    bool operator()(const value_type& x) const {
+      return (x.Rank() == 0);
+    }
+  } rank_zero_pred;
 
-
-  // // Need to resolve constexpr problem - AWB 21.02.16
-  // struct {
-  //   typedef EMTFTrack value_type;
-  //   constexpr bool operator()(const value_type& x) {
-  //     return (x.Rank() == 0);
-  //   }
-  // } rank_zero_pred;
-
-  // tracks.erase(std::remove_if(tracks.begin(), tracks.end(), rank_zero_pred), tracks.end());
+  tracks.erase(std::remove_if(tracks.begin(), tracks.end(), rank_zero_pred), tracks.end());
 
   for (const auto& track : tracks) {
     assert(track.Hits().size() > 0);

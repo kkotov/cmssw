@@ -345,15 +345,13 @@ void PrimitiveMatching::insert_hits(
   }
 
   // Sort by station
+  struct {
+    typedef EMTFHit value_type;
+    bool operator()(const value_type& lhs, const value_type& rhs) const {
+      return lhs.Station() < rhs.Station();
+    }
+  } less_station_cmp;
 
-  // // Need to resolve constexpr problem - AWB 21.02.16
-  // struct {
-  //   typedef EMTFHit value_type;
-  //   constexpr bool operator()(const value_type& lhs, const value_type& rhs) {
-  //     return lhs.Station() < rhs.Station();
-  //   }
-  // } less_station_cmp;
-
-  // std::stable_sort(track.Hits().begin(), track.Hits().end(), less_station_cmp);
+  std::stable_sort(track.Hits().begin(), track.Hits().end(), less_station_cmp);
 
 }
