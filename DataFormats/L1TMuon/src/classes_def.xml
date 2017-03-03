@@ -37,6 +37,7 @@
   <class name="l1t::EMTFTrack"/>
   <class name="l1t::EMTFTrackCollection"/>
   <class name="edm::Wrapper<l1t::EMTFTrackCollection>"/>
+  <class name="l1t::EMTFPtLUT"/>
 
  </selection>
 </lcgdict>

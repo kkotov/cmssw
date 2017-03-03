@@ -40,8 +40,8 @@ namespace l1t {
   EMTFTrack() :    
     endcap(-99), sector(-99), sector_idx(-99), mode(-99), mode_inv(-99), 
       rank(-99), winner(-99), charge(-99), bx(-99), first_bx(-99), second_bx(-99), 
-      pt(-99), pt_XML(-99), zone(-99), theta_fp(-99), theta_deg(-99), 
-      eta(-99), phi_fp(-99), phi_loc_deg(-99), phi_glob_deg(-99), 
+      pt(-99), pt_XML(-99), zone(-99), theta_fp(-99), theta(-99), 
+      eta(-99), phi_fp(-99), phi_loc(-99), phi_glob(-99), 
       track_num(-99), has_neighbor(-99), all_neighbor(-99), numHits(-99)
       {};
     
@@ -52,8 +52,11 @@ namespace l1t {
 
     void set_Hits(EMTFHitCollection bits)   { _Hits = bits;            numHits = _Hits.size();   }
     void push_Hit(EMTFHit bits)             { _Hits.push_back(bits);   numHits = _Hits.size();   }
-    void set_HitIdx(std::vector<uint> bits) { _HitIdx = bits;          numHits = _HitIdx.size(); }
-    void push_HitIdx(uint bits)             { _HitIdx.push_back(bits); numHits = _HitIdx.size(); }
+    void clear_Hits()                       { _Hits.clear();           numHits = _Hits.size();   }
+    void set_HitIdx(std::vector<uint> bits) { _HitIdx = bits;          }
+    void push_HitIdx(uint bits)             { _HitIdx.push_back(bits); }
+    void clear_HitIdx()                     { _HitIdx.clear();         }
+
     int NumHits              () const { return numHits; }
     EMTFHitCollection Hits   () const { return _Hits;   }
     std::vector<uint> HitIdx () const { return _HitIdx; }
@@ -87,11 +90,11 @@ namespace l1t {
     void set_pt_XML       (float val) { pt_XML       = val;  }
     void set_zone         (int  bits) { zone         = bits; }
     void set_theta_fp     (int  bits) { theta_fp     = bits; }
-    void set_theta_deg    (float val) { theta_deg    = val;  }
+    void set_theta        (float val) { theta        = val;  }
     void set_eta          (float val) { eta          = val;  }
     void set_phi_fp       (int  bits) { phi_fp       = bits; }
-    void set_phi_loc_deg  (float val) { phi_loc_deg  = val;  }
-    void set_phi_glob_deg (float val) { (val < 180) ? phi_glob_deg = val : phi_glob_deg = val - 360; }
+    void set_phi_loc      (float val) { phi_loc      = val;  }
+    void set_phi_glob     (float val) { (val < 180) ? phi_glob     = val : phi_glob     = val - 360; }
     void set_track_num    (int  bits) { track_num    = bits; }
     void set_has_neighbor (int  bits) { has_neighbor = bits; }
     void set_all_neighbor (int  bits) { all_neighbor = bits; }
@@ -112,11 +115,11 @@ namespace l1t {
     float Pt_XML       () const { return pt_XML      ; }
     int   Zone         () const { return zone        ; }
     int   Theta_fp     () const { return theta_fp    ; }
-    float Theta_deg    () const { return theta_deg   ; }
+    float Theta        () const { return theta       ; }
     float Eta          () const { return eta         ; }
     int   Phi_fp       () const { return phi_fp      ; }
-    float Phi_loc_deg  () const { return phi_loc_deg ; }
-    float Phi_glob_deg () const { return phi_glob_deg; }
+    float Phi_loc      () const { return phi_loc     ; }
+    float Phi_glob     () const { return phi_glob    ; }
     int   Track_num    () const { return track_num   ; }
     int   Has_neighbor () const { return has_neighbor; }
     int   All_neighbor () const { return all_neighbor; }
@@ -135,30 +138,30 @@ namespace l1t {
     RegionalMuonCand _GMT;
     uint             _GMTIdx;
 
-    int   endcap      ; // 
-    int   sector      ; // 
-    int   sector_idx  ; // 
-    int   mode        ; // 
-    int   mode_inv    ; // 
-    int   rank        ; // 
-    int   winner      ; // 
-    int   charge      ; // 
-    int   bx          ; // 
-    int   first_bx    ; // 
-    int   second_bx   ; // 
-    float pt          ; // 
-    float pt_XML      ; // 
-    int   zone        ; // 
-    int   theta_fp    ; // 
-    float theta_deg   ; // 
-    float eta         ; // 
-    int   phi_fp      ; // 
-    float phi_loc_deg ; // 
-    float phi_glob_deg; // 
-    int   track_num   ; // 
-    int   has_neighbor; // 
-    int   all_neighbor; // 
-    int   numHits     ; //
+    int   endcap      ; //    +/-1.  For ME+ and ME-. 
+    int   sector      ; //  1 -  6.
+    int   sector_idx  ; //  0 - 11.  0 - 5 for ME+, 6 - 11 for ME-.
+    int   mode        ; //  0 - 15. 
+    int   mode_inv    ; // 15 -  0.
+    int   rank        ; //  0 - 127  (Range? - AWB 03.03.17)
+    int   winner      ; //  0 -  2.  (Range? - AWB 03.03.17)
+    int   charge      ; //    +/-1.  For physical charge (reversed from GMT convention)
+    int   bx          ; // -3 - +3.
+    int   first_bx    ; // -3 - +3.
+    int   second_bx   ; // -3 - +3.
+    float pt          ; //  0 - 255
+    float pt_XML      ; //  0 - 999
+    int   zone        ; //  0 -  3.
+    int   theta_fp    ; //  0 - 127
+    float theta       ; //  0 - 90.
+    float eta         ; //  +/-2.5.
+    int   phi_fp      ; // 0 - 4920
+    float phi_loc     ; // -22 - 60  (Range? - AWB 03.03.17) 
+    float phi_glob    ; //  +/-180.
+    int   track_num   ; //  0 - ??.  (Range? - AWB 03.03.17)
+    int   has_neighbor; //  0 or 1.
+    int   all_neighbor; //  0 or 1.
+    int   numHits     ; //  1 -  4.
     
   }; // End of class EMTFTrack
   

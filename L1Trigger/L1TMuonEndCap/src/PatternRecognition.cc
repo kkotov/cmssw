@@ -398,9 +398,10 @@ void PatternRecognition::process_single_zone(
 
         // Create a road (fired pattern)
         EMTFRoad road;
-        road.set_endcap   ( endcap_ );
-        road.set_sector   ( sector_ );
-        road.set_bx       ( bx_ - drift_time );
+        road.set_endcap     ( (endcap_ == 1) ? 1 : -1 );
+        road.set_sector     ( sector_ );
+        road.set_sector_idx ( (endcap_ == 1) ? sector_ - 1 : sector_ + 5 );
+        road.set_bx         ( bx_ - drift_time );
 
         road.set_zone     ( patt_ref.at(0) );
         road.set_key_zhit ( patt_ref.at(1) );

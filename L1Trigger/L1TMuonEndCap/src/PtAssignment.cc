@@ -97,6 +97,7 @@ void PtAssignment::process(
     track.set_PtLUT  ( tmp_LUT );
     track.set_pt_XML ( xmlpt );
     track.set_pt     ( pt );
+    track.set_charge ( (gmt_charge.second == 1) ? ((gmt_charge.first == 1) ? -1 : +1) : 0 );
     track.set_GMT    ( tmp_cand );
   }
 

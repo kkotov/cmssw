@@ -160,14 +160,15 @@ void PrimitiveMatching::process(
 
       // Create a track
       EMTFTrack track;
-      track.set_endcap   ( road.Endcap() );
-      track.set_sector   ( road.Sector() );
-      track.set_bx       ( road.BX() );
-      track.set_zone     ( road.Zone() );
-      track.set_rank     ( road.Quality_code() );
-      track.set_winner   ( road.Winner() );
+      track.set_endcap     ( road.Endcap() );
+      track.set_sector     ( road.Sector() );
+      track.set_sector_idx ( road.Sector_idx() );
+      track.set_bx         ( road.BX() );
+      track.set_zone       ( road.Zone() );
+      track.set_rank       ( road.Quality_code() );
+      track.set_winner     ( road.Winner() );
 
-      track.Hits().clear();
+      track.clear_Hits();
 
       // Insert hits
       for (int istation = 0; istation < NUM_STATIONS; ++istation) {
@@ -340,7 +341,7 @@ void PrimitiveMatching::insert_hits(
       // All duplicates with the same strip but different wire must have same phi_fp
       assert(conv_hit_i.Phi_fp() == conv_hit_j.Phi_fp());
 
-      track.Hits().push_back(conv_hit_i);
+      track.push_Hit( conv_hit_i );
     }
   }
 
@@ -352,6 +353,9 @@ void PrimitiveMatching::insert_hits(
     }
   } less_station_cmp;
 
-  std::stable_sort(track.Hits().begin(), track.Hits().end(), less_station_cmp);
+  EMTFHitCollection tmp_hits = track.Hits();
+  std::stable_sort(tmp_hits.begin(), tmp_hits.end(), less_station_cmp);
+  track.set_Hits( tmp_hits );
+  tmp_hits.clear();
 
 }

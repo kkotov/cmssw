@@ -29,7 +29,8 @@ namespace l1t {
       pattern(-99), bend(-99), valid(-99), sync_err(-99), bc0(-99), bx(-99), stub_num(-99),
       phi_fp(-99), theta_fp(-99), phzvl(-99), ph_hit(-99), zone_hit(-99), zone_code(-99),
       fs_segment(-99), fs_zone_code(-99), bt_station(-99), bt_segment(-99),
-      phi_loc_deg(-99), phi_glob_deg(-99), theta_deg(-99), eta(-99),
+      phi_loc(-99), phi_glob(-99), theta(-99), eta(-99), 
+      phi_sim(-99), theta_sim(-99), eta_sim(-99), 
       is_CSC(-99), is_RPC(-99), subsystem(-99)
       {};
     
@@ -98,10 +99,13 @@ namespace l1t {
     void set_fs_zone_code (int  bits) { fs_zone_code = bits; }
     void set_bt_station   (int  bits) { bt_station   = bits; }
     void set_bt_segment   (int  bits) { bt_segment   = bits; }
-    void set_phi_loc_deg  (float val) { phi_loc_deg  = val;  }
-    void set_phi_glob_deg (float val) { phi_glob_deg = val;  }
-    void set_theta_deg    (float val) { theta_deg    = val;  }
+    void set_phi_loc      (float val) { phi_loc      = val;  }
+    void set_phi_glob     (float val) { phi_glob     = val;  }
+    void set_theta        (float val) { theta        = val;  }
     void set_eta          (float val) { eta          = val;  }
+    void set_phi_sim      (float val) { phi_sim      = val;  }
+    void set_theta_sim    (float val) { theta_sim    = val;  }
+    void set_eta_sim      (float val) { eta_sim      = val;  }
     void set_is_CSC       (int  bits) { is_CSC       = bits; }
     void set_is_RPC       (int  bits) { is_RPC       = bits; }
     void set_subsystem    (int  bits) { subsystem    = bits; }
@@ -146,10 +150,13 @@ namespace l1t {
     int   FS_zone_code ()  const { return fs_zone_code; }
     int   BT_station   ()  const { return bt_station  ; }
     int   BT_segment   ()  const { return bt_segment  ; }
-    float Phi_loc_deg  ()  const { return phi_loc_deg ; }
-    float Phi_glob_deg ()  const { return phi_glob_deg; }
-    float Theta_deg    ()  const { return theta_deg   ; }
-    int   Eta          ()  const { return eta         ; }
+    float Phi_loc      ()  const { return phi_loc     ; }
+    float Phi_glob     ()  const { return phi_glob    ; }
+    float Theta        ()  const { return theta       ; }
+    float Eta          ()  const { return eta         ; }
+    float Phi_sim      ()  const { return phi_sim     ; }
+    float Theta_sim    ()  const { return theta_sim   ; }
+    float Eta_sim      ()  const { return eta_sim     ; }
     int   Is_CSC       ()  const { return is_CSC      ; }
     int   Is_RPC       ()  const { return is_RPC      ; }
     int   Subsystem    ()  const { return subsystem   ; }
@@ -162,53 +169,56 @@ namespace l1t {
     CSCCorrelatedLCTDigi csc_LCTDigi;
     RPCDigi rpc_Digi;
     
-    int   endcap      ; // -1 or 1.  Filled in EMTFHit.cc from CSCDetId, modified
-    int   station     ; //  1 -  4.  Filled in EMTFHit.cc from CSCDetId
-    int   ring        ; //  1 -  3.  Filled in EMTFHit.cc from CSCDetId
-    int   sector      ; //  1 -  6.  Filled in EMTFHit.cc from CSCDetId
-    int   sector_idx  ; //  0 - 11.  0 - 5 for positive endcap, 6 - 11 for negative.  If a neighbor hit, set by the sector that received it, not the actual sector of the hit.
-    int   subsector   ; //  1 -  2.  Filled in EMTFHit.cc or emulator using calc_subsector above
-    int   chamber     ; //  1 - 36.  Filled in EMTFHit.cc from CSCDetId
-    int   csc_ID      ; //  1 -  9.  Filled in EMTFHit.cc from CSCCorrelatedLCTDigi or emulator from CSCData
-    int   csc_nID     ; //  
-    int   roll        ; //  Sub-division of ring for RPC hits
-    int   rpc_layer   ; //  Forward-backward bit for RPC hits
+    int   endcap      ; //    +/-1.  For ME+ and ME-.
+    int   station     ; //  1 -  4.
+    int   ring        ; //  1 -  4.  ME1/1a is denoted as "Ring 4".  Should check dependence on input CSCDetId convention. - AWB 02.03.17
+    int   sector      ; //  1 -  6.  
+    int   sector_idx  ; //  0 - 11.  0 - 5 for ME+, 6 - 11 for ME-.  For neighbor hits, set by EMTF sector that received it.
+    int   subsector   ; //  0 -  6.  In CSCs, 1 or 2 for ME1, 0 for ME2/3/4.  In RPCs, 1 - 6.
+    int   chamber     ; //  1 - 36.  For CSCs only.  0 for RPCs.
+    int   csc_ID      ; //  1 -  9.  For CSCs only.
+    int   csc_nID     ; //  1 - 15.  For CSCs only.  Neighbors 10 - 15, 12 not filled.
+    int   roll        ; //  1 -  3.  For RPCs only, sub-division of ring. (Range? - AWB 02.03.17)
+    int   rpc_layer   ; //  ? -  ?.  Forward-backward bit for RPC hits? - AWB 02.03.17
     int   neighbor    ; //  0 or 1.  Filled in EMTFBlockME.cc 
     int   mpc_link    ; //  1 -  3.  Filled in EMTFHit.cc from CSCCorrelatedLCTDigi
-    int   pc_sector   ; //
-    int   pc_station  ; // 
-    int   pc_chamber  ; // 
-    int   pc_segment  ; //
-    int   wire        ; //  1 -  ?.  Filled in EMTFHit.cc from CSCCorrelatedLCTDigi
-    int   strip       ; //  1 -  ?.  Filled in EMTFHit.cc from CSCCorrelatedLCTDigi
-    int   strip_hi    ; //  Highest strip number in an RPC cluster
-    int   strip_low   ; //  Lowest strip number in an RPC cluster
-    int   track_num   ; //  ? -  ?.  Filled in emulator from CSCData 
-    int   quality     ; //  0 - 15.  Filled in EMTFHit.cc from CSCCorrelatedLCTDigi
-    int   pattern     ; //  0 - 10.  Filled in EMTFHit.cc from CSCCorrelatedLCTDigi
-    int   bend        ; //  0 or 1.  Filled in EMTFHit.cc from CSCCorrelatedLCTDigi
-    int   valid       ; //  0 or 1.  Filled in EMTFHit.cc from CSCCorrelatedLCTDigi
-    int   sync_err    ; //  0 or 1.  Filled in EMTFHit.cc from CSCCorrelatedLCTDigi
-    int   bc0         ; //  0 or 1.
-    int   bx          ; //  -3 - 3.  Filled in EMTFHit.cc from CSCCorrelatedLCTDigi
-    int   stub_num    ; //  0 or 1.
-    int   phi_fp      ;
-    int   theta_fp    ;
-    int   phzvl       ;
-    int   ph_hit      ;
-    int   zone_hit    ;
-    int   zone_code   ;
-    int   fs_segment  ;
-    int   fs_zone_code;
-    int   bt_station  ;
-    int   bt_segment  ;
-    float phi_loc_deg ;
-    float phi_glob_deg;
-    float theta_deg   ;
-    int   eta         ;
-    int   is_CSC      ; //  0 or 1.  Filled in EMTFHit.cc
-    int   is_RPC      ; //  0 or 1.  Filled in EMTFHit.cc
-    int   subsystem   ; //
+    int   pc_sector   ; //  1 -  6.  EMTF sector that received the LCT, even those sent from neighbor sectors.
+    int   pc_station  ; //  0 -  5.  0 for ME1 subsector 1, 5 for neighbor hits.
+    int   pc_chamber  ; //  0 -  8.
+    int   pc_segment  ; //  0 -  3.
+    int   wire        ; //  0 - 111  For CSCs only.
+    int   strip       ; //  0 - 158  For CSCs only.
+    int   strip_hi    ; //  ? -  ?.  For RPCs only, highest strip in a cluster.  (Range? - AWB 02.03.17)
+    int   strip_low   ; //  ? -  ?.  For RPCs only, lowest strip in a cluster.  (Range? - AWB 02.03.17)
+    int   track_num   ; //  ? -  ?.  For CSCs only.  (Range? - AWB 02.03.17)
+    int   quality     ; //  0 - 15.  For CSCs only.
+    int   pattern     ; //  0 - 10.  For CSCs only.
+    int   bend        ; //  0 or 1.  For CSCs only.
+    int   valid       ; //  0 or 1.  For CSCs only (for now; could use to flag failing clusters? - AWB 02.03.17)
+    int   sync_err    ; //  0 or 1.  For CSCs only.
+    int   bc0         ; //  0 or 1.  Only from unpacked data? - AWB 02.03.17
+    int   bx          ; // -3 - +3.  
+    int   stub_num    ; //  0 or 1.  Only from unpacked data? - AWB 02.03.17
+    int   phi_fp      ; //  0 - 4920
+    int   theta_fp    ; //  0 - 127
+    int   phzvl       ; //  0 -  6.
+    int   ph_hit      ; //  2 - 43.  (Range? - AWB 02.03.17)
+    int   zone_hit    ; //  4 - 156  (Range? - AWB 02.03.17)
+    int   zone_code   ; //  0 - 12.  (Range? - AWB 02.03.17)
+    int   fs_segment  ; //  0 - 13.  (Range? - AWB 02.03.17)
+    int   fs_zone_code; //  1 - 14.  (Range? - AWB 02.03.17)
+    int   bt_station  ; //  0 -  4.
+    int   bt_segment  ; //  0 - 25.  (Range? - AWB 02.03.17)
+    float phi_loc     ; // -20 - 60  (Range? - AWB 02.03.17)
+    float phi_glob    ; // +/-180.
+    float theta       ; // 0 - 90.
+    float eta         ; // +/-2.5.
+    float phi_sim     ; // +/-180.
+    float theta_sim   ; // 0 - 90.
+    float eta_sim     ; // +/-2.5.
+    int   is_CSC      ; //  0 or 1.
+    int   is_RPC      ; //  0 or 1.
+    int   subsystem   ; //  1 or ?.  1 for CSC, for RPC? - AWB 02.03.17
 
   }; // End of class EMTFHit
   

@@ -31,7 +31,6 @@ namespace {
    
     l1t::EMTFTrackCollection emtfTrack;
     edm::Wrapper<l1t::EMTFTrackCollection> emtfTrackWrap;
-   
   };
 }
 

@@ -17,15 +17,43 @@ namespace L1TMuonEndCap {
   int calc_uGMT_chamber(int csc_ID, int subsector, int neighbor, int station);
 
   // ___________________________________________________________________________
+  // coordinate ranges: phi[-180, 180] or [-pi, pi], theta[0, 90] or [0, pi/2]
+  inline double range_phi_deg(double deg) {
+    while (deg <= -180.) deg += 360.;
+    while (deg >  +180.) deg -= 360.;
+    return deg;
+  }
+
+  inline double range_phi_rad(double rad) {
+    while (rad <= -M_PI) rad += 2*M_PI;
+    while (rad >  +M_PI) rad -= 2*M_PI;
+    return rad;
+  }
+
+  inline double range_theta_deg(double deg) {
+    deg = fabs(deg);
+    while (deg > 180.)    deg -= 180.;
+    if    (deg > 180./2.) deg  = 180. - deg;
+    return deg;
+  }
+
+  inline double range_theta_rad(double rad) {
+    rad = fabs(rad);
+    while (rad > M_PI)    rad -= M_PI;
+    if    (rad > M_PI/2.) rad  = M_PI - rad;
+    return rad;
+  }
+
+  // ___________________________________________________________________________
   // radians, degrees
   inline double deg_to_rad(double deg) {
     constexpr double factor = M_PI/180.;
-    return deg * factor;
+    return range_phi_deg(deg) * factor;
   }
 
   inline double rad_to_deg(double rad) {
     constexpr double factor = 180./M_PI;
-    return rad * factor;
+    return range_phi_rad(rad) * factor;
   }
 
   // ___________________________________________________________________________
@@ -58,14 +86,16 @@ namespace L1TMuonEndCap {
   //  return eta;
   //}
 
-  inline double calc_eta_from_theta_rad(double theta_rad) {
-    double eta = -1. * std::log(std::tan(theta_rad/2.));
+  inline double calc_eta_from_theta_deg(double deg, int endcap) {
+    double rad = deg_to_rad( range_theta_deg(deg) );
+    double eta = -1. * std::log(std::tan(rad/2.));
+    if (endcap != 1) eta *= -1.; // endcap == 1 is ME+
     return eta;
   }
 
   inline int    calc_eta_GMT(double val) {
     val /= 0.010875;
-    int gmt_eta = static_cast<int>(std::round(val));
+    int gmt_eta = static_cast<int>(std::round(fabs(val)));
     return gmt_eta;
   }
 
@@ -83,15 +113,15 @@ namespace L1TMuonEndCap {
 
   inline double calc_theta_rad(double eta) {
     double theta_rad = 2. * std::atan(std::exp(-1.*eta));
-    return theta_rad;
+    return range_theta_rad(theta_rad);
   }
 
   inline double calc_theta_deg(double eta) {
     return rad_to_deg(calc_theta_rad(eta));
   }
 
-  inline int    calc_theta_int(double theta, int endcap) {  // theta in deg, endcap [1-2]
-    theta = (endcap == 2) ? (180. - theta) : theta;
+  inline int    calc_theta_int(double theta) {
+    theta = range_theta_deg(theta);
     theta = (theta - 8.5) * 128./(45.0-8.5);
     int theta_int = static_cast<int>(std::round(theta));
     return theta_int;
@@ -101,8 +131,7 @@ namespace L1TMuonEndCap {
   // phi
   inline double calc_phi_glob_deg(double loc, int sector) {  // loc in deg, sector [1-6]
     double glob = loc + 15. + (60. * (sector-1));
-    glob = (glob < 180.) ? glob : glob - 360.;
-    return glob;
+    return range_phi_deg(glob);
   }
 
   inline double calc_phi_glob_rad(double loc, int sector) {  // loc in rad, sector [1-6]
@@ -131,16 +160,14 @@ namespace L1TMuonEndCap {
   //}
 
   inline double calc_phi_loc_deg_from_glob(double glob, int sector) {  // glob in deg, sector [1-6]
-    // Put phi in [-180,180] range
-    while (glob <  -180.)  glob += 360.;
-    while (glob >= +180.)  glob -= 360.;
+    glob = range_phi_deg(glob);
     double loc = glob - 15. - (60. * (sector-1));
+    loc = ((loc + 22.) < 0.) ? loc + 360. : loc;
     return loc;
   }
 
   inline int    calc_phi_loc_int(double glob, int sector) {  // glob in deg, sector [1-6]
     double loc = calc_phi_loc_deg_from_glob(glob, sector);
-    loc = ((loc + 22.) < 0.) ? loc + 360. : loc;
     loc = (loc + 22.) * 60.;
     int phi_int = static_cast<int>(std::round(loc));
     return phi_int;
@@ -149,7 +176,7 @@ namespace L1TMuonEndCap {
   inline double calc_phi_GMT_deg(int bits) {
     double phi = static_cast<double>(bits);
     phi = (phi * 360./576.) + (180./576.);
-    return phi;
+    return range_phi_deg(phi);
   }
 
   //inline double calc_phi_GMT_deg_corr(int bits) {  // AWB mod 09.02.16
@@ -161,10 +188,7 @@ namespace L1TMuonEndCap {
   }
 
   inline int    calc_phi_GMT_int(double val) {  // phi in deg
-    // Put phi in [-180,180] range
-    while (val <  -180.)  val += 360.;
-    while (val >= +180.)  val -= 360.;
-
+    range_phi_deg(val);
     val = (val - 180./576.) / (360./576.);
     int gmt_phi = static_cast<int>(std::round(val));
     return gmt_phi;

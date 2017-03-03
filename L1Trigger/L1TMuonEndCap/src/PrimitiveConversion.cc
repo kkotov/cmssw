@@ -131,6 +131,8 @@ void PrimitiveConversion::convert_csc(
 
   int tp_bx        = tp_data.bx;
   int tp_csc_ID    = tp_data.cscID;
+  int tp_track_num = tp_data.trknmb;
+  int tp_sync_err  = tp_data.syncErr;
 
   // station 1 --> subsector 1 or 2
   // station 2,3,4 --> subsector 0
@@ -154,7 +156,7 @@ void PrimitiveConversion::convert_csc(
   // Set properties
   conv_hit.SetCSCDetId     ( tp_detId );
 
-  conv_hit.set_endcap      ( tp_endcap );
+  conv_hit.set_endcap      ( (tp_endcap == 2) ? -1 : tp_endcap );
   conv_hit.set_station     ( tp_station );
   conv_hit.set_ring        ( tp_ring );
   //conv_hit.set_roll        ( tp_roll );
@@ -163,9 +165,13 @@ void PrimitiveConversion::convert_csc(
   conv_hit.set_subsector   ( tp_subsector );
   conv_hit.set_csc_ID      ( tp_csc_ID );
   conv_hit.set_csc_nID     ( csc_nID );
+  conv_hit.set_track_num   ( tp_track_num );
+  conv_hit.set_sync_err    ( tp_sync_err );
 
   conv_hit.set_bx          ( tp_bx + bxShiftCSC_ );
   conv_hit.set_subsystem   ( TriggerPrimitive::kCSC );
+  conv_hit.set_is_CSC      ( true );
+  conv_hit.set_is_RPC      ( false );
 
   conv_hit.set_pc_sector   ( pc_sector );
   conv_hit.set_pc_station  ( pc_station );
@@ -181,22 +187,23 @@ void PrimitiveConversion::convert_csc(
   conv_hit.set_pattern     ( tp_data.pattern );
   conv_hit.set_bend        ( tp_data.bend );
 
+  conv_hit.set_neighbor    ( pc_station == 5 );
+  conv_hit.set_sector_idx  ( (endcap_ == 1) ? sector_ - 1 : sector_ + 5 );
+
   convert_csc_details(conv_hit);
 
   // Add coordinates from fullsim
   {
-    namespace l1t = L1TMuonEndCap;
+    namespace emtf = L1TMuonEndCap;
 
     const GlobalPoint& gp = tp_geom_->getGlobalPoint(muon_primitive);
-    double glob_phi   = l1t::rad_to_deg(gp.phi().value());
-    double glob_theta = l1t::rad_to_deg(gp.theta());
+    double glob_phi   = emtf::rad_to_deg(gp.phi().value());
+    double glob_theta = emtf::rad_to_deg(gp.theta());
     double glob_eta   = gp.eta();
-    double loc_phi    = l1t::calc_phi_loc_deg_from_glob(glob_phi, sector_);
 
-    conv_hit.set_phi_glob_deg ( glob_phi );
-    conv_hit.set_phi_loc_deg  ( loc_phi );
-    conv_hit.set_theta_deg    ( glob_theta );
-    conv_hit.set_eta          ( glob_eta );
+    conv_hit.set_phi_sim   ( glob_phi );
+    conv_hit.set_theta_sim ( glob_theta );
+    conv_hit.set_eta_sim   ( glob_eta );
   }
 }
 
@@ -329,6 +336,9 @@ void PrimitiveConversion::convert_csc_details(EMTFHit& conv_hit) const {
 
   int fph = lut().get_ph_init(fw_endcap, fw_sector, pc_lut_id);
   fph = fph + ph_tmp_sign * ph_tmp;
+
+  // // Add option to correct for endcap-dependence (needed to line up with global geometry / RPC hits) - AWB 03.03.17
+  // fph -= ( (fw_endcap == 0) ? 28 : 36);
 
   int ph_hit = lut().get_ph_disp(fw_endcap, fw_sector, pc_lut_id);
   ph_hit = (ph_hit >> 1) + ph_tmp_sign * (ph_tmp >> 5) + ph_coverage;
@@ -524,6 +534,15 @@ void PrimitiveConversion::convert_csc_details(EMTFHit& conv_hit) const {
 
   conv_hit.set_bt_station   ( bt_station );
   conv_hit.set_bt_segment   ( bt_segment );
+
+  {
+    namespace emtf = L1TMuonEndCap;
+    conv_hit.set_phi_loc  ( emtf::calc_phi_loc_deg(fph) );
+    conv_hit.set_phi_glob ( emtf::calc_phi_glob_deg(conv_hit.Phi_loc(), sector_) );
+    conv_hit.set_theta    ( emtf::calc_theta_deg_from_int(th) );
+    conv_hit.set_eta      ( emtf::calc_eta_from_theta_deg( conv_hit.Theta(), endcap_ ) );
+  }
+
 }
 
 // _____________________________________________________________________________
@@ -549,7 +568,7 @@ void PrimitiveConversion::convert_rpc(
   // Set properties
   conv_hit.SetRPCDetId     ( tp_detId );
 
-  conv_hit.set_endcap      ( tp_endcap );
+  conv_hit.set_endcap      ( (tp_endcap == 2) ? -1 : tp_endcap );
   conv_hit.set_station     ( tp_station );
   conv_hit.set_ring        ( tp_ring );
   conv_hit.set_roll        ( tp_roll );
@@ -561,6 +580,8 @@ void PrimitiveConversion::convert_rpc(
 
   conv_hit.set_bx          ( tp_bx + bxShiftRPC_ );
   conv_hit.set_subsystem   ( TriggerPrimitive::kRPC );
+  conv_hit.set_is_CSC      ( false );
+  conv_hit.set_is_RPC      ( true );
 
   conv_hit.set_pc_sector   ( pc_sector );
   conv_hit.set_pc_station  ( pc_station );
@@ -576,19 +597,22 @@ void PrimitiveConversion::convert_rpc(
   conv_hit.set_pattern     ( 10 );  // Arbitrarily set to the straightest pattern for RPC hits
   //conv_hit.set_bend        ( tp_data.bend );
 
+  conv_hit.set_neighbor    ( pc_station == 5 );
+  conv_hit.set_sector_idx  ( (endcap_ == 1) ? sector_ - 1 : sector_ + 5 );
+
+
   // Get coordinates from fullsim since LUTs do not exist yet
   bool use_fullsim_coords = true;
   if (use_fullsim_coords) {
-    namespace l1t = L1TMuonEndCap;
+    namespace emtf = L1TMuonEndCap;
 
     const GlobalPoint& gp = tp_geom_->getGlobalPoint(muon_primitive);
-    double glob_phi   = l1t::rad_to_deg(gp.phi().value());
-    double glob_theta = l1t::rad_to_deg(gp.theta());
+    double glob_phi   = emtf::rad_to_deg(gp.phi().value());
+    double glob_theta = emtf::range_theta_deg( emtf::rad_to_deg(gp.theta()) );
     double glob_eta   = gp.eta();
-    double loc_phi    = l1t::calc_phi_loc_deg_from_glob(glob_phi, sector_);
 
-    int phi_loc_int   = l1t::calc_phi_loc_int(glob_phi, sector_);
-    int theta_int     = l1t::calc_theta_int(glob_theta, endcap_);
+    int phi_loc_int   = emtf::calc_phi_loc_int(glob_phi, sector_);
+    int theta_int     = emtf::calc_theta_int(glob_theta);
 
     // Use RPC-specific convention in docs/CPPF-EMTF-format_2016_11_01.docx
     // Phi precision is (1/15) degrees, 4x larger than CSC precision of (1/60) degrees
@@ -602,14 +626,18 @@ void PrimitiveConversion::convert_rpc(
     // _________________________________________________________________________
     // Output
 
-    conv_hit.set_phi_fp     ( fph );        // Full-precision integer phi
-    conv_hit.set_theta_fp   ( th );         // Full-precision integer theta
+    conv_hit.set_phi_sim   ( glob_phi );
+    conv_hit.set_theta_sim ( glob_theta );
+    conv_hit.set_eta_sim   ( glob_eta );
 
-    conv_hit.set_phi_glob_deg ( glob_phi );
-    conv_hit.set_phi_loc_deg  ( loc_phi );
-    conv_hit.set_theta_deg    ( glob_theta );
-    conv_hit.set_eta          ( glob_eta );
-  }
+    conv_hit.set_phi_fp       ( fph ); // Full-precision integer phi
+    conv_hit.set_theta_fp     ( th );  // Full-precision integer theta
+
+    conv_hit.set_phi_loc  ( emtf::calc_phi_loc_deg(fph) );
+    conv_hit.set_phi_glob ( emtf::calc_phi_glob_deg(conv_hit.Phi_loc(), sector_) );
+    conv_hit.set_theta    ( emtf::calc_theta_deg_from_int(th) );
+    conv_hit.set_eta      ( emtf::calc_eta_from_theta_deg( conv_hit.Theta(), endcap_ ) );
+  } // End if (use_fullsim_coords)
 
   convert_rpc_details(conv_hit);
 }
@@ -685,4 +713,5 @@ void PrimitiveConversion::convert_rpc_details(EMTFHit& conv_hit) const {
 
   conv_hit.set_bt_station   ( bt_station );
   conv_hit.set_bt_segment   ( bt_segment );
+
 }

@@ -12,14 +12,16 @@ namespace l1t {
   public:
 
   EMTFRoad() :
-    endcap(-99), sector(-99), bx(-99), zone(-99), key_zhit(-99), pattern(-99),
-      straightness(-99), layer_code(-99), quality_code(-99), winner(-99)
+    endcap(-99), sector(-99), sector_idx(-99), bx(-99), zone(-99), 
+      key_zhit(-99), pattern(-99), straightness(-99), 
+      layer_code(-99), quality_code(-99), winner(-99)
       {};
     
     virtual ~EMTFRoad() {};
     
     void set_endcap       (int  bits) { endcap        = bits; }
     void set_sector       (int  bits) { sector        = bits; }
+    void set_sector_idx   (int  bits) { sector_idx    = bits; }
     void set_bx           (int  bits) { bx            = bits; }
     void set_zone         (int  bits) { zone          = bits; }
     void set_key_zhit     (int  bits) { key_zhit      = bits; }
@@ -31,6 +33,7 @@ namespace l1t {
 
     int Endcap       ()  const { return endcap      ; }
     int Sector       ()  const { return sector      ; }
+    int Sector_idx   ()  const { return sector_idx  ; }
     int BX           ()  const { return bx          ; }
     int Zone         ()  const { return zone        ; }
     int Key_zhit     ()  const { return key_zhit    ; }
@@ -45,6 +48,7 @@ namespace l1t {
 
     int endcap      ; 
     int sector      ;
+    int sector_idx  ;
     int bx          ; 
     int zone        ; // Pattern detector ID
     int key_zhit    ; // Also called 'ph_num' or 'ph_pat'

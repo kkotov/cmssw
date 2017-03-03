@@ -1,6 +1,7 @@
 #include "L1Trigger/L1TMuonEndCap/interface/AngleCalculation.hh"
 
 #include "helper.hh"  // to_hex, to_binary
+#include "L1Trigger/L1TMuonEndCap/interface/TrackTools.hh"
 
 namespace {
   static const int bw_fph = 13;  // bit width of ph, full precision
@@ -372,13 +373,28 @@ void AngleCalculation::calculate_angles(EMTFTrack& track) const {
   track.set_phi_fp   ( phi_fp );
   track.set_theta_fp ( theta_fp );
   track.set_PtLUT    ( ptlut_data );
+
+  {
+    namespace emtf = L1TMuonEndCap;
+    track.set_phi_loc  ( emtf::calc_phi_loc_deg(phi_fp) );
+    track.set_phi_glob ( emtf::calc_phi_glob_deg(track.Phi_loc(), sector_) );
+    track.set_theta    ( emtf::calc_theta_deg_from_int(theta_fp) );
+    track.set_eta      ( emtf::calc_eta_from_theta_deg(track.Theta(), endcap_) );
+  }
   
   // Only keep the best segments
-  track.Hits().clear();
+  track.clear_Hits();
   
   EMTFHitCollection tmp_hits = track.Hits();
   flatten_container(st_conv_hits, tmp_hits);
   track.set_Hits( tmp_hits );
+  track.set_has_neighbor( false );
+  track.set_all_neighbor( true );
+  for (const auto& hit : tmp_hits) {
+    if (hit.Neighbor() == 1) track.set_has_neighbor( true );
+    if (hit.Neighbor() == 0) track.set_all_neighbor( false );
+  }
+  
 }
 
 void AngleCalculation::calculate_bx(EMTFTrack& track) const {
