@@ -36,18 +36,17 @@ namespace l1t {
     
     virtual ~EMTFHit() {};
 
-    void ImportCSCDetId (const CSCDetId& _detId);
+    // void ImportCSCDetId (const CSCDetId& _detId);
     CSCDetId CreateCSCDetId();
-    void ImportRPCDetId (const RPCDetId& _detId);
-    RPCDetId CreateRPCDetId();
-    void ImportCSCCorrelatedLCTDigi (const CSCCorrelatedLCTDigi& _digi);
+    // void ImportRPCDetId (const RPCDetId& _detId);
+    // RPCDetId CreateRPCDetId();
+    // void ImportCSCCorrelatedLCTDigi (const CSCCorrelatedLCTDigi& _digi);
     CSCCorrelatedLCTDigi CreateCSCCorrelatedLCTDigi();
-    void ImportRPCDigi (const RPCDigi& _digi);
-    RPCDigi CreateRPCDigi();
-    void ImportME (const emtf::ME _ME );
+    // void ImportRPCDigi (const RPCDigi& _digi);
+    // RPCDigi CreateRPCDigi();
 
-    void PrintSimulatorHeader();
-    void PrintForSimulator();
+    // void PrintSimulatorHeader();
+    // void PrintForSimulator();
 
     void SetCSCDetId         (CSCDetId id)                 { csc_DetId         = id;        }
     void SetRPCDetId         (RPCDetId id)                 { rpc_DetId         = id;        }

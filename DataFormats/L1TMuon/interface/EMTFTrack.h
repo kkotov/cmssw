@@ -94,7 +94,7 @@ namespace l1t {
     void set_eta          (float val) { eta          = val;  }
     void set_phi_fp       (int  bits) { phi_fp       = bits; }
     void set_phi_loc      (float val) { phi_loc      = val;  }
-    void set_phi_glob     (float val) { (val < 180) ? phi_glob     = val : phi_glob     = val - 360; }
+    void set_phi_glob     (float val) { phi_glob     = val;  }
     void set_track_num    (int  bits) { track_num    = bits; }
     void set_has_neighbor (int  bits) { has_neighbor = bits; }
     void set_all_neighbor (int  bits) { all_neighbor = bits; }
