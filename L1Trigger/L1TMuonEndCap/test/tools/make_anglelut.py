@@ -1,3 +1,7 @@
+#
+# This cfg calls MakeAngleLUT which is obsolete and completely unused.
+#
+
 import FWCore.ParameterSet.Config as cms
 
 process = cms.Process("Whatever")
@@ -20,15 +24,12 @@ process.source = cms.Source("EmptySource")
 
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1))
 
-process.analyzer1 = cms.EDAnalyzer("MakeCoordLUT",
+process.analyzer1 = cms.EDAnalyzer("MakeAngleLUT",
     # Verbosity level
     verbosity = cms.untracked.int32(1),
 
-    # Output diectory
-    outdir = cms.string("./"),
-
-    # Produce "validate.root" to validate the LUTs
-    please_validate = cms.bool(True),
+    # Output file
+    outfile = cms.string("angle.root"),
 )
 
 process.path1 = cms.Path(process.analyzer1)

@@ -16,6 +16,7 @@
 namespace l1t {
   namespace stage2 {
     namespace emtf {
+      namespace L1TMuonEndCap = ::emtf;  // use alias 'L1TMuonEndCap' for the namespace 'emtf' used in L1Trigger/L1TMuonEndCap
 
       void ImportME  ( EMTFHit& _hit, const l1t::emtf::ME _ME, const int _endcap, const int _sector );
       void ImportRPC ( EMTFHit& _hit, const l1t::emtf::RPC _RPC, const int _endcap, const int _sector );

@@ -17,10 +17,10 @@
 #include "progress_bar.hh"
 
 
-class CompareEMTFPtLUT : public edm::EDAnalyzer {
+class ComparePtLUT : public edm::EDAnalyzer {
 public:
-  explicit CompareEMTFPtLUT(const edm::ParameterSet&);
-  virtual ~CompareEMTFPtLUT();
+  explicit ComparePtLUT(const edm::ParameterSet&);
+  virtual ~ComparePtLUT();
 
 private:
   //virtual void beginJob();
@@ -50,7 +50,7 @@ private:
 // _____________________________________________________________________________
 #define PTLUT_SIZE (1<<30)
 
-CompareEMTFPtLUT::CompareEMTFPtLUT(const edm::ParameterSet& iConfig) :
+ComparePtLUT::ComparePtLUT(const edm::ParameterSet& iConfig) :
     ptlut_reader1_(),
     ptlut_reader2_(),
     config_(iConfig),
@@ -63,9 +63,9 @@ CompareEMTFPtLUT::CompareEMTFPtLUT(const edm::ParameterSet& iConfig) :
   ptlut_reader2_.read(infile2_);
 }
 
-CompareEMTFPtLUT::~CompareEMTFPtLUT() {}
+ComparePtLUT::~ComparePtLUT() {}
 
-void CompareEMTFPtLUT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
+void ComparePtLUT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   if (done_)  return;
 
   compareLUTs();
@@ -74,7 +74,7 @@ void CompareEMTFPtLUT::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   return;
 }
 
-void CompareEMTFPtLUT::compareLUTs() {
+void ComparePtLUT::compareLUTs() {
   TFile* f = TFile::Open("diff.root", "RECREATE");
 
   std::map<int, TH1F*> histograms;
@@ -142,4 +142,4 @@ void CompareEMTFPtLUT::compareLUTs() {
 
 // DEFINE THIS AS A PLUG-IN
 #include "FWCore/Framework/interface/MakerMacros.h"
-DEFINE_FWK_MODULE(CompareEMTFPtLUT);
+DEFINE_FWK_MODULE(ComparePtLUT);

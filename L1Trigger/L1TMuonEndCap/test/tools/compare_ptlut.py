@@ -6,7 +6,7 @@ process.source = cms.Source("EmptySource")
 
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1))
 
-process.analyzer1 = cms.EDAnalyzer("CompareEMTFPtLUT",
+process.analyzer1 = cms.EDAnalyzer("ComparePtLUT",
     # Verbosity level
     verbosity = cms.untracked.int32(0),
 

@@ -180,7 +180,7 @@ namespace l1t {
 	mu_.setTFIdentifiers ( Track_.Sector() - 1, (Track_.Endcap() == 1) ? emtf_pos : emtf_neg );
 	mu_.setTrackSubAddress( RegionalMuonCand::kTrkNum, Track_.Track_num() );
 	// mu_.set_dataword   ( SP_.Dataword() );
-	Track_.set_GMT(mu_);
+	// Track_.set_GMT(mu_);
 
 	///////////////////////
 	// Match hits to tracks
