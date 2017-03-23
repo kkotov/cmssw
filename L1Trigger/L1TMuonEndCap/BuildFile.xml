@@ -17,7 +17,7 @@
 <use name="Geometry/CSCGeometry"/>
 <use name="L1Trigger/DTUtilities"/>
 <use name="L1Trigger/CSCCommonTrigger"/>
-
-<use name="DataFormats/L1TMuon"/>
+<use name="MagneticField/Engine"/>
+<use name="MagneticField/Records"/>
 
 <use name="root"/>

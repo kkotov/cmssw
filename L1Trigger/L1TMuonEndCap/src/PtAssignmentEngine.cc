@@ -54,7 +54,6 @@ void PtAssignmentEngine::configure_details() {
   if (readPtLUTFile_) {
     std::stringstream ss;
     ss << std::getenv("CMSSW_BASE") << "/" << "src/L1Trigger/L1TMuonEndCap/data/emtf_luts/v_16_02_21_ptlut/LUT_AndrewFix_25July16.dat";  // hardcoded, it does not exist in CMSSW
-    //ss << std::getenv("CMSSW_BASE") << "/" << "src/L1Trigger/L1TMuonEndCap/data/emtf_luts/v_16_02_21_ptlut_madorsky/LUT_AndrewFix_25July16.dat";  // hardcoded, it does not exist in CMSSW
     std::string lut_full_path = ss.str();
 
     ptlut_reader_.read(lut_full_path);

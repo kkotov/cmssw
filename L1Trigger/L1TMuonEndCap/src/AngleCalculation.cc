@@ -1,7 +1,7 @@
 #include "L1Trigger/L1TMuonEndCap/interface/AngleCalculation.hh"
 
-#include "helper.hh"  // to_hex, to_binary
 #include "L1Trigger/L1TMuonEndCap/interface/TrackTools.hh"
+#include "helper.hh"  // to_hex, to_binary
 
 namespace {
   static const int bw_fph = 13;  // bit width of ph, full precision
@@ -14,16 +14,18 @@ namespace {
 void AngleCalculation::configure(
     int verbose, int endcap, int sector, int bx,
     int bxWindow,
-    int thetaWindow, int thetaWindowRPC
+    int thetaWindow, int thetaWindowRPC,
+    bool bugME11Dupes
 ) {
   verbose_ = verbose;
   endcap_  = endcap;
   sector_  = sector;
   bx_      = bx;
 
-  bxWindow_           = bxWindow;
-  thetaWindow_        = thetaWindow;
-  thetaWindowRPC_     = thetaWindowRPC;
+  bxWindow_        = bxWindow;
+  thetaWindow_     = thetaWindow;
+  thetaWindowRPC_  = thetaWindowRPC;
+  bugME11Dupes_    = bugME11Dupes;
 }
 
 void AngleCalculation::process(
@@ -42,7 +44,7 @@ void AngleCalculation::process(
     }
 
     // Erase tracks with rank = 0
-    // Erase. hits that are not selected as the best phi and theta in each station
+    // Erase hits that are not selected as the best phi and theta in each station
     erase_tracks(tracks);
 
     tracks_it  = tracks.begin();
@@ -58,7 +60,7 @@ void AngleCalculation::process(
   if (verbose_ > 0) {  // debug
     for (const auto& tracks : zone_tracks) {
       for (const auto& track : tracks) {
-        std::cout << "deltas: z: " << track.Zone() << " pat: " << track.Winner() << " rank: " << to_hex(track.Rank())
+        std::cout << "deltas: z: " << track.Zone()-1 << " pat: " << track.Winner() << " rank: " << to_hex(track.Rank())
             << " delta_ph: " << array_as_string(track.PtLUT().delta_ph)
             << " delta_th: " << array_as_string(track.PtLUT().delta_th)
             << " sign_ph: " << array_as_string(track.PtLUT().sign_ph)
@@ -83,12 +85,18 @@ void AngleCalculation::calculate_angles(EMTFTrack& track) const {
 
   for (int istation = 0; istation < NUM_STATIONS; ++istation) {
     for (const auto& conv_hit : track.Hits()) {
-      if ((conv_hit.Station() - 1) == istation)
+      if ((conv_hit.Station() - 1) == istation) {
         st_conv_hits.at(istation).push_back(conv_hit);
+      }
     }
-    assert(st_conv_hits.at(istation).size() <= 2);  // ambiguity in theta is max 2
+
+    if (bugME11Dupes_)
+      assert(st_conv_hits.at(istation).size() <= 4);  // ambiguity in theta is max 4
+    else
+      assert(st_conv_hits.at(istation).size() <= 2);  // ambiguity in theta is max 2
   }
   assert(st_conv_hits.size() == NUM_STATIONS);
+
 
   // Best theta deltas and phi deltas
   // from 0 to 5: dtheta12, dtheta13, dtheta14, dtheta23, dtheta24, dtheta34
@@ -176,44 +184,50 @@ void AngleCalculation::calculate_angles(EMTFTrack& track) const {
 
 
   // Apply cuts on dtheta
+
+  // There is a possible bug in FW. After a dtheta pair fails the theta window
+  // cut, the valid flag of the pair is not updated. Later on, theta from
+  // this pair is used to assign the precise theta of the track.
+  std::array<bool, NUM_STATION_PAIRS> best_dtheta_valid_arr_1;
+
   for (int ipair = 0; ipair < NUM_STATION_PAIRS; ++ipair) {
     if (best_has_rpc_arr.at(ipair))
-      best_dtheta_valid_arr.at(ipair) &= (best_dtheta_arr.at(ipair) <= thetaWindowRPC_);
+      best_dtheta_valid_arr_1.at(ipair) = best_dtheta_valid_arr.at(ipair) && (best_dtheta_arr.at(ipair) <= thetaWindowRPC_);
     else
-      best_dtheta_valid_arr.at(ipair) &= (best_dtheta_arr.at(ipair) <= thetaWindow_);
+      best_dtheta_valid_arr_1.at(ipair) = best_dtheta_valid_arr.at(ipair) && (best_dtheta_arr.at(ipair) <= thetaWindow_);
   }
 
   // Find valid segments
   // vmask contains valid station mask = {ME4,ME3,ME2,ME1}. "0b" prefix for binary.
   int vmask1 = 0, vmask2 = 0, vmask3 = 0;
 
-  if (best_dtheta_valid_arr.at(0)) {
+  if (best_dtheta_valid_arr_1.at(0)) {
     vmask1 |= 0b0011;  // 12
   }
-  if (best_dtheta_valid_arr.at(1)) {
+  if (best_dtheta_valid_arr_1.at(1)) {
     vmask1 |= 0b0101;  // 13
   }
-  if (best_dtheta_valid_arr.at(2)) {
+  if (best_dtheta_valid_arr_1.at(2)) {
     vmask1 |= 0b1001;  // 14
   }
-  if (best_dtheta_valid_arr.at(3)) {
+  if (best_dtheta_valid_arr_1.at(3)) {
     vmask2 |= 0b0110;  // 23
   }
-  if (best_dtheta_valid_arr.at(4)) {
+  if (best_dtheta_valid_arr_1.at(4)) {
     vmask2 |= 0b1010;  // 24
   }
-  if (best_dtheta_valid_arr.at(5)) {
+  if (best_dtheta_valid_arr_1.at(5)) {
     vmask3 |= 0b1100;  // 34
   }
 
   // merge station masks only if they share bits
-  // Station 1 hits  pass if any dTheta1X values pass
-  // Station 2 hits  pass if any dTheta2X values pass, *EXCEPT* the following cases:
+  // Station 1 hits pass if any dTheta1X values pass
+  // Station 2 hits pass if any dTheta2X values pass, *EXCEPT* the following cases:
   //           Only {13, 24} pass, only {13, 24, 34} pass,
   //           Only {14, 23} pass, only {14, 23, 34} pass.
-  // Station 3 hits  pass if any dTheta3X values pass, *EXCEPT* the following cases:
+  // Station 3 hits pass if any dTheta3X values pass, *EXCEPT* the following cases:
   //           Only {12, 34} pass, only {14, 23} pass.
-  // Station 4 hits  pass if any dTheta4X values pass, *EXCEPT* the following cases:
+  // Station 4 hits pass if any dTheta4X values pass, *EXCEPT* the following cases:
   //           Only {12, 34} pass, only {13, 24} pass.
   int vstat = vmask1;  // valid stations based on th coordinates
   if ((vstat & vmask2) != 0 || vstat == 0)
@@ -234,16 +248,26 @@ void AngleCalculation::calculate_angles(EMTFTrack& track) const {
   int best_pair = -1;
 
   if ((vstat & (1<<1)) != 0) {            // ME2 present
-    if (best_dtheta_valid_arr.at(0))      // 12
+    if (!best_has_rpc_arr.at(0) && best_dtheta_valid_arr.at(0))      // 12, no RPC
       best_pair = 0;
-    else if (best_dtheta_valid_arr.at(3)) // 23
+    else if (!best_has_rpc_arr.at(3) && best_dtheta_valid_arr.at(3)) // 23, no RPC
       best_pair = 3;
-    else if (best_dtheta_valid_arr.at(4)) // 24
+    else if (!best_has_rpc_arr.at(4) && best_dtheta_valid_arr.at(4)) // 24, no RPC
+      best_pair = 4;
+    else if (best_dtheta_valid_arr.at(0)) // 12, has RPC
+      best_pair = 0;
+    else if (best_dtheta_valid_arr.at(3)) // 23, has RPC
+      best_pair = 3;
+    else if (best_dtheta_valid_arr.at(4)) // 24, has RPC
       best_pair = 4;
   } else if ((vstat & (1<<2)) != 0) {     // ME3 present
-    if (best_dtheta_valid_arr.at(1))      // 13
+    if (!best_has_rpc_arr.at(1) && best_dtheta_valid_arr.at(1))      // 13, no RPC
       best_pair = 1;
-    else if (best_dtheta_valid_arr.at(5)) // 34
+    else if (!best_has_rpc_arr.at(5) && best_dtheta_valid_arr.at(5)) // 34, no RPC
+      best_pair = 5;
+    else if (best_dtheta_valid_arr.at(1)) // 13, has RPC
+      best_pair = 1;
+    else if (best_dtheta_valid_arr.at(5)) // 34, has RPC
       best_pair = 5;
   } else if ((vstat & (1<<3)) != 0) {     // ME4 present
     if (best_dtheta_valid_arr.at(2))      // 14
@@ -261,20 +285,17 @@ void AngleCalculation::calculate_angles(EMTFTrack& track) const {
     struct {
       typedef EMTFHit value_type;
       bool operator()(const value_type& lhs, const value_type& rhs) const {
-    	const int lhs_theta = lhs.Theta_fp();
-    	const int rhs_theta = rhs.Theta_fp();
-        return std::abs(lhs_theta-theta) < std::abs(rhs_theta-theta);
+        return std::abs(lhs.Theta_fp()-theta) < std::abs(rhs.Theta_fp()-theta);
       }
       int theta;
     } less_dtheta_cmp;
     less_dtheta_cmp.theta = theta_fp;  // capture
-    
+
     for (int istation = 0; istation < NUM_STATIONS; ++istation) {
       std::stable_sort(st_conv_hits.at(istation).begin(), st_conv_hits.at(istation).end(), less_dtheta_cmp);
       if (st_conv_hits.at(istation).size() > 1)
         st_conv_hits.at(istation).resize(1);  // just the minimum in dtheta
     }
-
   }
 
   // update rank taking into account available stations after theta deltas
@@ -339,8 +360,7 @@ void AngleCalculation::calculate_angles(EMTFTrack& track) const {
   for (int i = 0; i < NUM_STATIONS; ++i) {
     const auto& v = st_conv_hits.at(i);
     ptlut_data.cpattern[i] = v.empty() ? 0 : v.front().Pattern();  // Automatically 10 for RPCs
-    ptlut_data.fr[i]       = v.empty() ? 0 : isFront( v.front().Station(), v.front().Ring(), 
-						      v.front().Chamber(), v.front().Subsystem() );
+    ptlut_data.fr[i]       = v.empty() ? 0 : isFront(v.front().Station(), v.front().Ring(), v.front().Chamber(), v.front().Subsystem());
   }
 
   for (int i = 0; i < NUM_STATIONS+1; ++i) {  // 'bt' arrays use 5-station convention
@@ -363,10 +383,10 @@ void AngleCalculation::calculate_angles(EMTFTrack& track) const {
       ptlut_data.bt_si[bt_station] = (bt_segment >> 0) & 0x1;
     }
   }
-  
+
   // ___________________________________________________________________________
   // Output
-  
+
   track.set_rank     ( rank );
   track.set_mode     ( mode );
   track.set_mode_inv ( mode_inv );
@@ -374,17 +394,14 @@ void AngleCalculation::calculate_angles(EMTFTrack& track) const {
   track.set_theta_fp ( theta_fp );
   track.set_PtLUT    ( ptlut_data );
 
-  {
-    namespace emtf = L1TMuonEndCap;
-    track.set_phi_loc  ( emtf::calc_phi_loc_deg(phi_fp) );
-    track.set_phi_glob ( emtf::calc_phi_glob_deg(track.Phi_loc(), sector_) );
-    track.set_theta    ( emtf::calc_theta_deg_from_int(theta_fp) );
-    track.set_eta      ( emtf::calc_eta_from_theta_deg(track.Theta(), endcap_) );
-  }
-  
+  track.set_phi_loc  ( emtf::calc_phi_loc_deg(phi_fp) );
+  track.set_phi_glob ( emtf::calc_phi_glob_deg(track.Phi_loc(), track.Sector()) );
+  track.set_theta    ( emtf::calc_theta_deg_from_int(theta_fp) );
+  track.set_eta      ( emtf::calc_eta_from_theta_deg(track.Theta(), track.Endcap()) );
+
   // Only keep the best segments
   track.clear_Hits();
-  
+
   EMTFHitCollection tmp_hits = track.Hits();
   flatten_container(st_conv_hits, tmp_hits);
   track.set_Hits( tmp_hits );
@@ -394,7 +411,7 @@ void AngleCalculation::calculate_angles(EMTFTrack& track) const {
     if (hit.Neighbor() == 1) track.set_has_neighbor( true );
     if (hit.Neighbor() == 0) track.set_all_neighbor( false );
   }
-  
+
 }
 
 void AngleCalculation::calculate_bx(EMTFTrack& track) const {

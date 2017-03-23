@@ -13,12 +13,15 @@
 #include "L1Trigger/DTUtilities/interface/DTTrigGeom.h"
 #include "Geometry/RPCGeometry/interface/RPCGeometry.h"
 
+#include "MagneticField/Engine/interface/MagneticField.h"
+#include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
+
 #include <cmath> // for pi
 
 using namespace L1TMuonEndCap;
 
 GeometryTranslator::GeometryTranslator():
-  _geom_cache_id(0ULL) {
+  _geom_cache_id(0ULL), _magfield_cache_id(0ULL) {
 }
 
 GeometryTranslator::~GeometryTranslator() {
@@ -106,6 +109,13 @@ void GeometryTranslator::checkAndUpdateGeometry(const edm::EventSetup& es) {
     geom.get(_geodt);
     _geom_cache_id = geomid;
   }
+
+  const IdealMagneticFieldRecord& magfield = es.get<IdealMagneticFieldRecord>();
+  unsigned long long magfieldid = magfield.cacheIdentifier();
+  if( _magfield_cache_id != magfieldid ) {
+    magfield.get(_magfield);
+    _magfield_cache_id = magfieldid;
+  }
 }
 
 GlobalPoint
@@ -134,7 +144,7 @@ GeometryTranslator::calcRPCSpecificPhi(const TriggerPrimitive& tp) const {
 }
 
 // this function actually does nothing since RPC
-// hits  are point-like objects
+// hits are point-like objects
 double
 GeometryTranslator::calcRPCSpecificBend(const TriggerPrimitive& tp) const {
   return 0.0;

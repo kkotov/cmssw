@@ -5,10 +5,8 @@
 #ifndef __l1t_EMTFHit_h__
 #define __l1t_EMTFHit_h__
 
+#include <cstdint>
 #include <vector>
-#include <boost/cstdint.hpp> 
-#include <cmath>
-#include <iostream>
 
 #include "DataFormats/MuonDetId/interface/CSCDetId.h"
 #include "DataFormats/MuonDetId/interface/RPCDetId.h"
@@ -17,46 +15,46 @@
 #include "DataFormats/L1TMuon/interface/EMTF/ME.h"
 
 namespace l1t {
-  
+
   class EMTFHit {
   public:
-    
-  EMTFHit() :
-    endcap(-99), station(-99), ring(-99), sector(-99), sector_idx(-99), subsector(-99), 
-      chamber(-99), csc_ID(-99), roll(-99), rpc_layer(-99), neighbor(-99), mpc_link(-99),
-      pc_sector(-99), pc_station(-99), pc_chamber(-99), pc_segment(-99),
-      wire(-99), strip(-99), strip_hi(-99), strip_low(-99), track_num(-99), quality(-99), 
-      pattern(-99), bend(-99), valid(-99), sync_err(-99), bc0(-99), bx(-99), stub_num(-99),
-      phi_fp(-99), theta_fp(-99), phzvl(-99), ph_hit(-99), zone_hit(-99), zone_code(-99),
-      fs_segment(-99), fs_zone_code(-99), bt_station(-99), bt_segment(-99),
-      phi_loc(-99), phi_glob(-99), theta(-99), eta(-99), 
-      phi_sim(-99), theta_sim(-99), eta_sim(-99), 
-      is_CSC(-99), is_RPC(-99), subsystem(-99)
-      {};
-    
+
+    EMTFHit() :
+        endcap(-99), station(-99), ring(-99), sector(-99), sector_idx(-99), subsector(-99),
+        chamber(-99), csc_ID(-99), csc_nID(-99), roll(-99), rpc_layer(-99), neighbor(-99), mpc_link(-99),
+        pc_sector(-99), pc_station(-99), pc_chamber(-99), pc_segment(-99),
+        wire(-99), strip(-99), strip_hi(-99), strip_low(-99), track_num(-99), quality(-99),
+        pattern(-99), bend(-99), valid(-99), sync_err(-99), bc0(-99), bx(-99), stub_num(-99),
+        phi_fp(-99), theta_fp(-99), phzvl(-99), ph_hit(-99), zone_hit(-99), zone_code(-99),
+        fs_segment(-99), fs_zone_code(-99), bt_station(-99), bt_segment(-99),
+        phi_loc(-99), phi_glob(-99), theta(-99), eta(-99),
+        phi_sim(-99), theta_sim(-99), eta_sim(-99),
+        is_CSC(-99), is_RPC(-99), subsystem(-99)
+        {};
+
     virtual ~EMTFHit() {};
 
     // void ImportCSCDetId (const CSCDetId& _detId);
-    CSCDetId CreateCSCDetId();
+    CSCDetId CreateCSCDetId() const;
     // void ImportRPCDetId (const RPCDetId& _detId);
-    // RPCDetId CreateRPCDetId();
+    // RPCDetId CreateRPCDetId() const;
     // void ImportCSCCorrelatedLCTDigi (const CSCCorrelatedLCTDigi& _digi);
-    CSCCorrelatedLCTDigi CreateCSCCorrelatedLCTDigi();
+    CSCCorrelatedLCTDigi CreateCSCCorrelatedLCTDigi() const;
     // void ImportRPCDigi (const RPCDigi& _digi);
-    // RPCDigi CreateRPCDigi();
+    // RPCDigi CreateRPCDigi() const;
 
-    // void PrintSimulatorHeader();
-    // void PrintForSimulator();
+    // void PrintSimulatorHeader() const;
+    // void PrintForSimulator() const;
 
-    void SetCSCDetId         (CSCDetId id)                 { csc_DetId         = id;        }
-    void SetRPCDetId         (RPCDetId id)                 { rpc_DetId         = id;        }
-    void SetCSCLCTDigi       (CSCCorrelatedLCTDigi digi)   { csc_LCTDigi       = digi;      }
-    void SetRPCDigi          (RPCDigi digi)                { rpc_Digi          = digi;      }
-    
+    void SetCSCDetId   (const CSCDetId& id)                 { csc_DetId         = id;        }
+    void SetRPCDetId   (const RPCDetId& id)                 { rpc_DetId         = id;        }
+    void SetCSCLCTDigi (const CSCCorrelatedLCTDigi& digi)   { csc_LCTDigi       = digi;      }
+    void SetRPCDigi    (const RPCDigi& digi)                { rpc_Digi          = digi;      }
+
     CSCDetId CSC_DetId                          () const { return csc_DetId;    }
     RPCDetId RPC_DetId                          () const { return rpc_DetId;    }
     CSCCorrelatedLCTDigi CSC_LCTDigi            () const { return csc_LCTDigi;  }
-    RPCDigi RPC_Digi                            () const { return rpc_Digi;  }
+    RPCDigi RPC_Digi                            () const { return rpc_Digi;     }
 
     void set_endcap       (int  bits) { endcap       = bits; }
     void set_station      (int  bits) { station      = bits; }
@@ -162,16 +160,16 @@ namespace l1t {
 
 
   private:
-    
+
     CSCDetId csc_DetId;
     RPCDetId rpc_DetId;
     CSCCorrelatedLCTDigi csc_LCTDigi;
     RPCDigi rpc_Digi;
-    
+
     int   endcap      ; //    +/-1.  For ME+ and ME-.
     int   station     ; //  1 -  4.
     int   ring        ; //  1 -  4.  ME1/1a is denoted as "Ring 4".  Should check dependence on input CSCDetId convention. - AWB 02.03.17
-    int   sector      ; //  1 -  6.  
+    int   sector      ; //  1 -  6.
     int   sector_idx  ; //  0 - 11.  0 - 5 for ME+, 6 - 11 for ME-.  For neighbor hits, set by EMTF sector that received it.
     int   subsector   ; //  0 -  6.  In CSCs, 1 or 2 for ME1, 0 for ME2/3/4.  In RPCs, 1 - 6.
     int   chamber     ; //  1 - 36.  For CSCs only.  0 for RPCs.
@@ -179,7 +177,7 @@ namespace l1t {
     int   csc_nID     ; //  1 - 15.  For CSCs only.  Neighbors 10 - 15, 12 not filled.
     int   roll        ; //  1 -  3.  For RPCs only, sub-division of ring. (Range? - AWB 02.03.17)
     int   rpc_layer   ; //  ? -  ?.  Forward-backward bit for RPC hits? - AWB 02.03.17
-    int   neighbor    ; //  0 or 1.  Filled in EMTFBlockME.cc 
+    int   neighbor    ; //  0 or 1.  Filled in EMTFBlockME.cc
     int   mpc_link    ; //  1 -  3.  Filled in EMTFHit.cc from CSCCorrelatedLCTDigi
     int   pc_sector   ; //  1 -  6.  EMTF sector that received the LCT, even those sent from neighbor sectors.
     int   pc_station  ; //  0 -  5.  0 for ME1 subsector 1, 5 for neighbor hits.
@@ -196,7 +194,7 @@ namespace l1t {
     int   valid       ; //  0 or 1.  For CSCs only (for now; could use to flag failing clusters? - AWB 02.03.17)
     int   sync_err    ; //  0 or 1.  For CSCs only.
     int   bc0         ; //  0 or 1.  Only from unpacked data? - AWB 02.03.17
-    int   bx          ; // -3 - +3.  
+    int   bx          ; // -3 - +3.
     int   stub_num    ; //  0 or 1.  Only from unpacked data? - AWB 02.03.17
     int   phi_fp      ; //  0 - 4920
     int   theta_fp    ; //  0 - 127
@@ -220,10 +218,10 @@ namespace l1t {
     int   subsystem   ; //  1 or ?.  1 for CSC, for RPC? - AWB 02.03.17
 
   }; // End of class EMTFHit
-  
+
   // Define a vector of EMTFHit
   typedef std::vector<EMTFHit> EMTFHitCollection;
-  
+
 } // End of namespace l1t
 
 #endif /* define __l1t_EMTFHit_h__ */

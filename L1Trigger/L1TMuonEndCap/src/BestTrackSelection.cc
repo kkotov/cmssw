@@ -6,7 +6,8 @@
 void BestTrackSelection::configure(
     int verbose, int endcap, int sector, int bx,
     int bxWindow,
-    int maxRoadsPerZone, int maxTracks, bool useSecondEarliest
+    int maxRoadsPerZone, int maxTracks, bool useSecondEarliest,
+    bool bugSameSectorPt0
 ) {
   verbose_ = verbose;
   endcap_  = endcap;
@@ -17,6 +18,7 @@ void BestTrackSelection::configure(
   maxRoadsPerZone_    = maxRoadsPerZone;
   maxTracks_          = maxTracks;
   useSecondEarliest_  = useSecondEarliest;
+  bugSameSectorPt0_   = bugSameSectorPt0;
 }
 
 void BestTrackSelection::process(
@@ -46,12 +48,12 @@ void BestTrackSelection::process(
   if (verbose_ > 0) {  // debug
     for (const auto& track : best_tracks) {
       std::cout << "track: " << track.Winner() << " rank: " << to_hex(track.Rank())
-		<< " ph_deltas: " << array_as_string(track.PtLUT().delta_ph)
-		<< " th_deltas: " << array_as_string(track.PtLUT().delta_th)
-		<< " phi: " << track.Phi_fp() << " theta: " << track.Theta_fp()
-		<< " cpat: " << array_as_string(track.PtLUT().cpattern)
-		<< " bx: " << track.BX()
-		<< std::endl;
+          << " ph_deltas: " << array_as_string(track.PtLUT().delta_ph)
+          << " th_deltas: " << array_as_string(track.PtLUT().delta_th)
+          << " phi: " << track.Phi_fp() << " theta: " << track.Theta_fp()
+          << " cpat: " << array_as_string(track.PtLUT().cpattern)
+          << " bx: " << track.BX()
+          << std::endl;
       for (int i = 0; i < NUM_STATIONS+1; ++i) {  // stations 0-4
         if (track.PtLUT().bt_vi[i] != 0)
           std::cout << ".. track segments: st: " << i
@@ -215,8 +217,15 @@ void BestTrackSelection::cancel_one_bx(
       if (larger[i][j] == 0)
         sum += 1;
     }
-    if (sum < maxTracks_)
-      winner[sum][i] = 1; // assign positional winner codes
+
+    if (sum < maxTracks_) {
+      winner[sum][i] = true; // assign positional winner codes
+    }
+
+    if (bugSameSectorPt0_ && sum > 0) {
+      // just keep the best track and kill the rest of them
+      winner[sum][i] = false;
+    }
   }
 
   // Output best tracks according to winner signals
@@ -412,8 +421,15 @@ void BestTrackSelection::cancel_multi_bx(
       if (larger[i][j] == 0)
         sum += 1;
     }
-    if (sum < maxTracks_)
-      winner[sum][i] = 1; // assign positional winner codes
+
+    if (sum < maxTracks_) {
+      winner[sum][i] = true; // assign positional winner codes
+    }
+
+    if (bugSameSectorPt0_ && sum > 0) {
+      // just keep the best track and kill the rest of them
+      winner[sum][i] = false;
+    }
   }
 
   // Output best tracks according to winner signals

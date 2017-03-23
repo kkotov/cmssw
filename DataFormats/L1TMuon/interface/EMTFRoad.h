@@ -1,24 +1,22 @@
 #ifndef __l1t_EMTFRoad_h__
 #define __l1t_EMTFRoad_h__
 
+#include <cstdint>
 #include <vector>
-#include <boost/cstdint.hpp>
-#include <cmath>
-#include <iostream>
 
 namespace l1t {
 
   class EMTFRoad {
   public:
 
-  EMTFRoad() :
-    endcap(-99), sector(-99), sector_idx(-99), bx(-99), zone(-99), 
-      key_zhit(-99), pattern(-99), straightness(-99), 
-      layer_code(-99), quality_code(-99), winner(-99)
-      {};
-    
+    EMTFRoad() :
+        endcap(-99), sector(-99), sector_idx(-99), bx(-99), zone(-99),
+        key_zhit(-99), pattern(-99), straightness(-99),
+        layer_code(-99), quality_code(-99), winner(-99)
+        {};
+
     virtual ~EMTFRoad() {};
-    
+
     void set_endcap       (int  bits) { endcap        = bits; }
     void set_sector       (int  bits) { sector        = bits; }
     void set_sector_idx   (int  bits) { sector_idx    = bits; }
@@ -46,10 +44,10 @@ namespace l1t {
 
   private:
 
-    int endcap      ; 
+    int endcap      ;
     int sector      ;
     int sector_idx  ;
-    int bx          ; 
+    int bx          ;
     int zone        ; // Pattern detector ID
     int key_zhit    ; // Also called 'ph_num' or 'ph_pat'
     int pattern     ; // Pattern detector ID
@@ -62,7 +60,7 @@ namespace l1t {
 
   // Define a vector of EMTFRoad
   typedef std::vector<EMTFRoad> EMTFRoadCollection;
-  
+
 } // End of namespace l1t
 
 #endif /* define __l1t_EMTFRoad_h__ */

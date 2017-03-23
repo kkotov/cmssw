@@ -11,7 +11,8 @@ namespace {
 
 void PrimitiveMatching::configure(
     int verbose, int endcap, int sector, int bx,
-    bool fixZonePhi
+    bool fixZonePhi, bool useNewZones,
+    bool bugME11Dupes
 ) {
   verbose_ = verbose;
   endcap_  = endcap;
@@ -19,6 +20,8 @@ void PrimitiveMatching::configure(
   bx_      = bx;
 
   fixZonePhi_      = fixZonePhi;
+  useNewZones_     = useNewZones;
+  bugME11Dupes_    = bugME11Dupes;
 }
 
 void PrimitiveMatching::process(
@@ -38,7 +41,7 @@ void PrimitiveMatching::process(
   if (verbose_ > 0) {  // debug
     for (const auto& roads : zone_roads) {
       for (const auto& road : roads) {
-        std::cout << "pattern on match input: z: " << road.Zone() << " r: " << road.Winner()
+        std::cout << "pattern on match input: z: " << road.Zone()-1 << " r: " << road.Winner()
             << " ph_num: " << road.Key_zhit() << " ph_q: " << to_hex(road.Quality_code())
             << " ly: " << to_binary(road.Layer_code(), 3) << " str: " << to_binary(road.Straightness(), 3)
             << std::endl;
@@ -80,20 +83,20 @@ void PrimitiveMatching::process(
             // Update fs_history encoded in fs_segment
             // This update only goes into the hits associated to a track, it does not affect the original hit collection
             int fs_history = bx_ - (conv_hits_it->BX());  // 0 for current BX, 1 for previous BX, 2 for BX before that
-	    int fs_segment = zs_conv_hits.at(zs).back().FS_segment();
-	    fs_segment |= ((fs_history & 0x3)<<4);
+            int fs_segment = zs_conv_hits.at(zs).back().FS_segment();
+            fs_segment |= ((fs_history & 0x3)<<4);
             zs_conv_hits.at(zs).back().set_fs_segment( fs_segment );
 
             // Update bt_history encoded in bt_segment
             // This update only goes into the hits associated to a track, it does not affect the original hit collection
             int bt_history = fs_history;
-	    int bt_segment = zs_conv_hits.at(zs).back().BT_segment();
-	    bt_segment |= ((bt_history & 0x3)<<5);
-            zs_conv_hits.at(zs).back().set_bt_segment ( bt_segment );
+            int bt_segment = zs_conv_hits.at(zs).back().BT_segment();
+            bt_segment |= ((bt_history & 0x3)<<5);
+            zs_conv_hits.at(zs).back().set_bt_segment( bt_segment );
           }
         }
       }
-      
+
     }  // end loop over conv_hits
   }  // end loop over extended_conv_hits
 
@@ -124,7 +127,7 @@ void PrimitiveMatching::process(
       // zs_phi_differences.at(zs) gets filled with a pair of <phi_diff, conv_hit> for the
       // conv_hit with the lowest phi_diff from the pattern in this station and zone
       process_single_zone_station(
-          istation + 1,
+          izone+1, istation+1,
           zone_roads.at(izone),
           zs_conv_hits.at(zs),
           zs_phi_differences.at(zs)
@@ -142,7 +145,7 @@ void PrimitiveMatching::process(
         for (int istation = 0; istation < NUM_STATIONS; ++istation) {
           const int zs = (izone*NUM_STATIONS) + istation;
           int ph_diff = zs_phi_differences.at(zs).at(iroad).first;
-          std::cout << "find seg: z: " << road.Zone() << " r: " << road.Winner()
+          std::cout << "find seg: z: " << road.Zone()-1 << " r: " << road.Winner()
               << " st: " << istation << " ph_diff: " << ph_diff
               << std::endl;
         }
@@ -160,13 +163,15 @@ void PrimitiveMatching::process(
 
       // Create a track
       EMTFTrack track;
-      track.set_endcap     ( road.Endcap() );
-      track.set_sector     ( road.Sector() );
+      track.set_endcap   ( road.Endcap() );
+      track.set_sector   ( road.Sector() );
       track.set_sector_idx ( road.Sector_idx() );
-      track.set_bx         ( road.BX() );
-      track.set_zone       ( road.Zone() );
-      track.set_rank       ( road.Quality_code() );
-      track.set_winner     ( road.Winner() );
+      track.set_bx       ( road.BX() );
+      track.set_zone     ( road.Zone() );
+      track.set_ph_num   ( road.Key_zhit() );
+      track.set_ph_q     ( road.Quality_code() );
+      track.set_rank     ( road.Quality_code() );
+      track.set_winner   ( road.Winner() );
 
       track.clear_Hits();
 
@@ -199,7 +204,7 @@ void PrimitiveMatching::process(
     for (const auto& tracks : zone_tracks) {
       for (const auto& track : tracks) {
         for (const auto& hit : track.Hits()) {
-          std::cout << "match seg: z: " << track.Zone() << " pat: " << track.Winner() <<  " st: " << hit.Station()
+          std::cout << "match seg: z: " << track.Zone()-1 << " pat: " << track.Winner() <<  " st: " << hit.Station()
               << " vi: " << to_binary(0b1, 2) << " hi: " << ((hit.FS_segment()>>4) & 0x3)
               << " ci: " << ((hit.FS_segment()>>1) & 0x7) << " si: " << (hit.FS_segment() & 0x1)
               << " ph: " << hit.Phi_fp() << " th: " << hit.Theta_fp()
@@ -212,7 +217,7 @@ void PrimitiveMatching::process(
 }
 
 void PrimitiveMatching::process_single_zone_station(
-    int station,
+    int zone, int station,
     const EMTFRoadCollection& roads,
     const EMTFHitCollection& conv_hits,
     std::vector<hit_sort_pair_t>& phi_differences
@@ -243,6 +248,49 @@ void PrimitiveMatching::process_single_zone_station(
 
   auto abs_diff = [](int a, int b) { return std::abs(a-b); };
 
+  // Simple sort by ph_diff
+  struct {
+    typedef hit_sort_pair_t value_type;
+    bool operator()(const value_type& lhs, const value_type& rhs) const {
+      // If different types, prefer CSC over RPC; else prefer the closer hit in dPhi
+      if (lhs.second->Subsystem() != rhs.second->Subsystem())
+        return (lhs.second->Subsystem() == TriggerPrimitive::kCSC);
+      else
+        return lhs.first <= rhs.first;
+    }
+  } less_ph_diff_cmp;
+
+  // Emulation of FW sorting with 3-way comparator
+  struct {
+    typedef hit_sort_pair_t value_type;
+    int operator()(const value_type& a, const value_type& b, const value_type& c) const {
+      int r = 0;
+      r |= bool(a.first <= b.first);
+      r <<= 1;
+      r |= bool(b.first <= c.first);
+      r <<= 1;
+      r |= bool(c.first <= a.first);
+
+      int rr = 0;
+      switch(r) {
+      //case 0b000 : rr = 3; break;  // invalid
+      case 0b001 : rr = 2; break;  // c
+      case 0b010 : rr = 1; break;  // b
+      case 0b011 : rr = 1; break;  // b
+      case 0b100 : rr = 0; break;  // a
+      case 0b101 : rr = 2; break;  // c
+      case 0b110 : rr = 0; break;  // a
+      //case 0b111 : rr = 0; break;  // invalid
+      default    : rr = 0; break;
+      }
+      return rr;
+    }
+  } less_ph_diff_cmp3;
+
+
+  // ___________________________________________________________________________
+  // For each road, find the segment with min phi difference in every station
+
   EMTFRoadCollection::const_iterator roads_it  = roads.begin();
   EMTFRoadCollection::const_iterator roads_end = roads.end();
 
@@ -261,7 +309,7 @@ void PrimitiveMatching::process_single_zone_station(
     EMTFHitCollection::const_iterator conv_hits_end = conv_hits.end();
 
     for (; conv_hits_it != conv_hits_end; ++conv_hits_it) {
-      int ph_seg     = conv_hits_it->Phi_fp();     // ph from segments
+      int ph_seg     = conv_hits_it->Phi_fp();  // ph from segments
       int ph_seg_red = ph_seg >> (bw_fph-bpow-1);  // remove unused low bits
       assert(ph_seg >= 0);
 
@@ -278,12 +326,81 @@ void PrimitiveMatching::process_single_zone_station(
         tmp_phi_differences.push_back(std::make_pair(ph_diff, conv_hits_it));  // make a key-value pair
     }
 
+    // _________________________________________________________________________
+    // Sort to find the segment with min phi difference
+
     if (!tmp_phi_differences.empty()) {
       // Find best phi difference
-      sort_ph_diff(tmp_phi_differences);
+      std::stable_sort(tmp_phi_differences.begin(), tmp_phi_differences.end(), less_ph_diff_cmp);
 
       // Store the best phi difference
       phi_differences.push_back(tmp_phi_differences.front());
+
+      // Because the sorting is sensitive to FW ordering, use the exact FW sorting.
+      // For now, do it only when the min phi difference comes from a CSC hit,
+      // because the FW ordering for CSC hits is known. To be updated later to
+      // include also the RPC hits.
+      // This implementation still differs from FW because I prefer to use a
+      // sorting function that is as generic as possible.
+      bool use_fw_sorting = true;
+
+      if (useNewZones_)  use_fw_sorting = false;
+
+      if (use_fw_sorting && (tmp_phi_differences.front().second->Subsystem() == TriggerPrimitive::kCSC)) {  // only when the min phi diff is from CSC
+        // zone_cham = 4 for [fs_01, fs_02, fs_03, fs_11], or 7 otherwise
+        // tot_diff = 27 or 45 in FW; it is 27 or 54 in the C++ merge_sort3 impl
+        const int max_drift = 3; // should use bxWindow from the config
+        const int zone_cham = ((zone == 1 && (2 <= station && station <= 4)) || (zone == 2 && station == 2)) ? 4 : 7;
+        const int seg_ch    = 2;
+        const int tot_diff  = (max_drift*zone_cham*seg_ch) + ((zone_cham == 4) ? 3 : 12);  // provide padding for 3-input comparators
+
+        std::vector<hit_sort_pair_t> fw_sort_array(tot_diff, std::make_pair(invalid_ph_diff, conv_hits_end));
+
+        std::vector<hit_sort_pair_t>::const_iterator phdiffs_it  = tmp_phi_differences.begin();
+        std::vector<hit_sort_pair_t>::const_iterator phdiffs_end = tmp_phi_differences.end();
+
+        for (; phdiffs_it != phdiffs_end; ++phdiffs_it) {
+          if (phdiffs_it->second->Subsystem() != TriggerPrimitive::kCSC)  continue;  // only know the FW ordering for CSC
+
+          //int ph_diff    = phdiffs_it->first;
+          int fs_segment = phdiffs_it->second->FS_segment();
+
+          // Calculate the index to put into the fw_sort_array
+          int fs_history = ((fs_segment>>4) & 0x3);
+          int fs_chamber = ((fs_segment>>1) & 0x7);
+          fs_segment = (fs_segment & 0x1);
+          unsigned fw_sort_array_index = (fs_history * zone_cham * seg_ch) + (fs_chamber * seg_ch) + fs_segment;
+
+          assert(fs_history < max_drift && fs_chamber < zone_cham && fs_segment < seg_ch);
+          assert(fw_sort_array_index < fw_sort_array.size());
+          fw_sort_array.at(fw_sort_array_index) = *phdiffs_it;
+        }
+
+        // Debug
+        //std::cout << "phdiffs" << std::endl;
+        //for (unsigned i = 0; i < fw_sort_array.size(); ++i)
+        //  std::cout << fw_sort_array.at(i).first << " ";
+        //std::cout << std::endl;
+
+        // Debug
+        //std::cout << "Before sort" << std::endl;
+        //for (unsigned i = 0; i < fw_sort_array.size(); ++i)
+        //  std::cout << fw_sort_array.at(i).second->FS_segment() << " ";
+        //std::cout << std::endl;
+
+        // Find the best phi difference according to FW sorting
+        //merge_sort3(fw_sort_array.begin(), fw_sort_array.end(), less_ph_diff_cmp, less_ph_diff_cmp3);
+        merge_sort3_with_hint(fw_sort_array.begin(), fw_sort_array.end(), less_ph_diff_cmp, less_ph_diff_cmp3, ((tot_diff == 54) ? tot_diff/2 : tot_diff/3));
+
+        // Replace the best phi difference
+        phi_differences.back() = fw_sort_array.front();
+
+        // Debug
+        //std::cout << "After sort" << std::endl;
+        //for (unsigned i = 0; i < fw_sort_array.size(); ++i)
+        //  std::cout << fw_sort_array.at(i).second->FS_segment() << " ";
+        //std::cout << std::endl;
+      }
 
     } else {
       // No segment found
@@ -293,30 +410,14 @@ void PrimitiveMatching::process_single_zone_station(
   }  // end loop over roads
 }
 
-void PrimitiveMatching::sort_ph_diff(
-    std::vector<hit_sort_pair_t>& phi_differences
-) const {
-  // Sort by key, but preserving the original order in case of a tie
-  struct {
-    typedef hit_sort_pair_t value_type;
-    bool operator()(const value_type& lhs, const value_type& rhs) const {
-      // If different types, prefer CSC over RPC; else prefer the closer hit in dPhi
-      if (lhs.second->Subsystem() != rhs.second->Subsystem())
-        return (lhs.second->Subsystem() == TriggerPrimitive::kCSC);
-      else
-        return std::make_pair(lhs.first, lhs.second->FS_segment()) < std::make_pair(rhs.first, rhs.second->FS_segment());
-    }
-  } less_ph_diff_cmp;
-
-  std::stable_sort(phi_differences.begin(), phi_differences.end(), less_ph_diff_cmp);
-}
-
 void PrimitiveMatching::insert_hits(
     hit_ptr_t conv_hit_ptr, const EMTFHitCollection& conv_hits,
     EMTFTrack& track
 ) const {
   EMTFHitCollection::const_iterator conv_hits_it  = conv_hits.begin();
   EMTFHitCollection::const_iterator conv_hits_end = conv_hits.end();
+
+  const bool is_csc_me11 = (conv_hit_ptr->Subsystem() == TriggerPrimitive::kCSC) && (conv_hit_ptr->Station() == 1) && (conv_hit_ptr->Ring() == 1 || conv_hit_ptr->Ring() == 4);
 
   // Find all possible duplicated hits, insert them
   for (; conv_hits_it != conv_hits_end; ++conv_hits_it) {
@@ -342,6 +443,31 @@ void PrimitiveMatching::insert_hits(
       assert(conv_hit_i.Phi_fp() == conv_hit_j.Phi_fp());
 
       track.push_Hit( conv_hit_i );
+
+    } else if (
+      (bugME11Dupes_ && is_csc_me11) &&  // if reproduce ME1/1 theta duplication bug, do not check 'ring', 'strip' and 'pattern'
+      (conv_hit_i.Subsystem()  == conv_hit_j.Subsystem()) &&
+      (conv_hit_i.PC_station() == conv_hit_j.PC_station()) &&
+      (conv_hit_i.PC_chamber() == conv_hit_j.PC_chamber()) &&
+      //(conv_hit_i.Ring()       == conv_hit_j.Ring()) &&  // because of ME1/1
+      //(conv_hit_i.Strip()      == conv_hit_j.Strip()) &&
+      //(conv_hit_i.Wire()       == conv_hit_j.Wire()) &&
+      //(conv_hit_i.Pattern()    == conv_hit_j.Pattern()) &&
+      (conv_hit_i.BX()         == conv_hit_j.BX()) &&
+      //(conv_hit_i.Strip_low()  == conv_hit_j.Strip_low()) && // For RPC clusters
+      //(conv_hit_i.Strip_hi()   == conv_hit_j.Strip_hi()) &&  // For RPC clusters
+      //(conv_hit_i.Roll()       == conv_hit_j.Roll()) &&
+      true
+    ) {
+      // All duplicates with the same strip but different wire must have same phi_fp
+      //assert(conv_hit_i.Phi_fp() == conv_hit_j.Phi_fp());
+
+      //track.push_Hit( conv_hit_i );
+
+      // Dirty hack
+      EMTFHit tmp_hit = conv_hit_j;
+      tmp_hit.set_theta_fp( conv_hit_i.Theta_fp() );
+      track.push_Hit( tmp_hit );
     }
   }
 
@@ -356,6 +482,4 @@ void PrimitiveMatching::insert_hits(
   EMTFHitCollection tmp_hits = track.Hits();
   std::stable_sort(tmp_hits.begin(), tmp_hits.end(), less_station_cmp);
   track.set_Hits( tmp_hits );
-  tmp_hits.clear();
-
 }

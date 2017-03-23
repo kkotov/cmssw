@@ -40,14 +40,18 @@ TrackFinder::TrackFinder(const edm::ParameterSet& iConfig, edm::ConsumesCollecto
   const auto& spPRParams16 = config_.getParameter<edm::ParameterSet>("spPRParams16");
   auto pattDefinitions    = spPRParams16.getParameter<std::vector<std::string> >("PatternDefinitions");
   auto symPattDefinitions = spPRParams16.getParameter<std::vector<std::string> >("SymPatternDefinitions");
-  auto thetaWindow        = spPRParams16.getParameter<int>("ThetaWindow");
-  auto thetaWindowRPC     = spPRParams16.getParameter<int>("ThetaWindowRPC");
   auto useSymPatterns     = spPRParams16.getParameter<bool>("UseSymmetricalPatterns");
+
+  const auto& spTBParams16 = config_.getParameter<edm::ParameterSet>("spTBParams16");
+  auto thetaWindow        = spTBParams16.getParameter<int>("ThetaWindow");
+  auto thetaWindowRPC     = spTBParams16.getParameter<int>("ThetaWindowRPC");
+  auto bugME11Dupes       = spTBParams16.getParameter<bool>("BugME11Dupes");
 
   const auto& spGCParams16 = config_.getParameter<edm::ParameterSet>("spGCParams16");
   auto maxRoadsPerZone    = spGCParams16.getParameter<int>("MaxRoadsPerZone");
   auto maxTracks          = spGCParams16.getParameter<int>("MaxTracks");
   auto useSecondEarliest  = spGCParams16.getParameter<bool>("UseSecondEarliest");
+  auto bugSameSectorPt0   = spGCParams16.getParameter<bool>("BugSameSectorPt0");
 
   const auto& spPAParams16 = config_.getParameter<edm::ParameterSet>("spPAParams16");
   auto bdtXMLDir          = spPAParams16.getParameter<std::string>("BDTXMLDir");
@@ -79,13 +83,13 @@ TrackFinder::TrackFinder(const edm::ParameterSet& iConfig, edm::ConsumesCollecto
             minBX, maxBX, bxWindow, bxShiftCSC, bxShiftRPC,
             zoneBoundaries, zoneOverlap, zoneOverlapRPC,
             includeNeighbor, duplicateTheta, fixZonePhi, useNewZones, fixME11Edges,
-            pattDefinitions, symPattDefinitions, thetaWindow, thetaWindowRPC, useSymPatterns,
-            maxRoadsPerZone, maxTracks, useSecondEarliest,
+            pattDefinitions, symPattDefinitions, useSymPatterns,
+            thetaWindow, thetaWindowRPC, bugME11Dupes,
+            maxRoadsPerZone, maxTracks, useSecondEarliest, bugSameSectorPt0,
             readPtLUTFile, fixMode15HighPt, bug9BitDPhi, bugMode7CLCT, bugNegPt, bugGMTPhi
         );
       }
     }
-    assert(sector_processors_.size() == NUM_SECTORS);
 
   } catch (...) {
     throw;
@@ -153,26 +157,25 @@ void TrackFinder::process(
       int station = (h.PC_station() == 0 && h.Subsector() == 1) ? 1 : h.PC_station();
       int chamber = h.PC_chamber() + 1;
       int strip   = (h.Station() == 1 && h.Ring() == 4) ? h.Strip() + 128 : h.Strip();  // ME1/1a
-      std::cout << bx << " " << h.Endcap() << " " << sector << " " << h.Subsector() << " " 
-		<< station << " " << h.Valid() << " " << h.Quality() << " " << h.Pattern() << " " 
-		<< h.Wire() << " " << chamber << " " << h.Bend() << " " << strip << std::endl;
+      std::cout << bx << " " << h.Endcap() << " " << sector << " " << h.Subsector() << " "
+          << station << " " << h.Valid() << " " << h.Quality() << " " << h.Pattern() << " "
+          << h.Wire() << " " << chamber << " " << h.Bend() << " " << strip << std::endl;
     }
-    
+
     std::cout << "Converted hits: " << std::endl;
     std::cout << "st ch ph th ph_hit phzvl" << std::endl;
     for (const auto& h : out_hits) {
-      std::cout << h.PC_station() << " " << h.PC_chamber() << " " << h.Phi_fp() << " " 
-		<< h.Theta_fp() << " " << (1ul<<h.Ph_hit()) << " " << h.Phzvl() << std::endl;
+      std::cout << h.PC_station() << " " << h.PC_chamber() << " " << h.Phi_fp() << " " << h.Theta_fp() << " "
+          << (1ul<<h.Ph_hit()) << " " << h.Phzvl() << std::endl;
     }
-    
+
     std::cout << "Num of EMTFTrack: " << out_tracks.size() << std::endl;
     std::cout << "bx e s a mo et ph cr q pt" << std::endl;
     for (const auto& t : out_tracks) {
-      std::cout << t.BX() << " " << t.Endcap() << " " << t.Sector() << " " << t.PtLUT().address << " " << t.Mode() << " " 
-		<< t.GMT().hwEta() << " " << t.GMT().hwPhi() << " " << t.GMT().hwSign() << " " << t.GMT().hwQual() << " " << t.Pt() 
-		<< std::endl;
+      std::cout << t.BX() << " " << t.Endcap() << " " << t.Sector() << " " << t.PtLUT().address << " " << t.Mode() << " "
+          << t.GMT_eta() << " " << t.GMT_phi() << " " << t.GMT_charge() << " " << t.GMT_quality() << " " << t.Pt() << std::endl;
     }
   }
-  
+
   return;
 }

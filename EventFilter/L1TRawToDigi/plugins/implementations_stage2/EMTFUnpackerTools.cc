@@ -76,7 +76,14 @@ namespace l1t {
 	_track.set_phi_loc    ( L1TMuonEndCap::calc_phi_loc_deg ( _SP.Phi_full() ) );
 	_track.set_phi_glob   ( L1TMuonEndCap::calc_phi_glob_deg( _track.Phi_loc(), _sector) );
 	_track.set_pt         ( (_SP.Pt_GMT() - 1) * 0.5 );
-	
+
+	_track.set_gmt_pt     ( _SP.Pt_GMT() );
+	_track.set_gmt_phi    ( _SP.Phi_GMT() );
+	_track.set_gmt_eta    ( _SP.Eta_GMT() );
+	_track.set_gmt_quality( _SP.Quality_GMT() );
+	_track.set_gmt_charge ( _SP.C() );
+	_track.set_gmt_charge_valid( _SP.VC() );
+
 	EMTFPtLUT _lut;
 	_lut.address = _SP.Pt_LUT_addr();
 	_track.set_PtLUT( _lut );

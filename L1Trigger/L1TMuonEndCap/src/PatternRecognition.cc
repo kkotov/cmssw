@@ -190,12 +190,12 @@ void PatternRecognition::process(
     for (const auto& conv_hits : extended_conv_hits) {
       for (const auto& conv_hit : conv_hits) {
         std::cout << "st: " << conv_hit.PC_station() << " ch: " << conv_hit.PC_chamber()
-		  << " ph: " << conv_hit.Phi_fp() << " th: " << conv_hit.Theta_fp()
-		  << " ph_hit: " << (1ul<<conv_hit.Ph_hit()) << " phzvl: " << conv_hit.Phzvl()
-		  << " strip: " << conv_hit.Strip() << " wire: " << conv_hit.Wire() << " cpat: " << conv_hit.Pattern()
-		  << " zone_hit: " << conv_hit.Zone_hit() << " zone_code: " << conv_hit.Zone_code()
-		  << " bx: " << conv_hit.BX()
-		  << std::endl;
+            << " ph: " << conv_hit.Phi_fp() << " th: " << conv_hit.Theta_fp()
+            << " ph_hit: " << (1ul<<conv_hit.Ph_hit()) << " phzvl: " << conv_hit.Phzvl()
+            << " strip: " << conv_hit.Strip() << " wire: " << conv_hit.Wire() << " cpat: " << conv_hit.Pattern()
+            << " zone_hit: " << conv_hit.Zone_hit() << " zone_code: " << conv_hit.Zone_code()
+            << " bx: " << conv_hit.BX()
+            << std::endl;
       }
     }
   }
@@ -205,14 +205,14 @@ void PatternRecognition::process(
 
   for (int izone = 0; izone < NUM_ZONES; ++izone) {
     // Skip the zone if no hits and no patterns
-    if (is_zone_empty(izone, extended_conv_hits, patt_lifetime_map))
+    if (is_zone_empty(izone+1, extended_conv_hits, patt_lifetime_map))
       continue;
 
     // Make zone images
-    make_zone_image(izone, extended_conv_hits, zone_images.at(izone));
+    make_zone_image(izone+1, extended_conv_hits, zone_images.at(izone));
 
     // Detect patterns
-    process_single_zone(izone, zone_images.at(izone), patt_lifetime_map, zone_roads.at(izone));
+    process_single_zone(izone+1, zone_images.at(izone), patt_lifetime_map, zone_roads.at(izone));
   }
 
   if (verbose_ > 1) {  // debug
@@ -228,7 +228,7 @@ void PatternRecognition::process(
   if (verbose_ > 0) {  // debug
     for (const auto& roads : zone_roads) {
       for (const auto& road : reversed(roads)) {
-        std::cout << "pattern: z: " << road.Zone() << " ph: " << road.Key_zhit()
+        std::cout << "pattern: z: " << road.Zone()-1 << " ph: " << road.Key_zhit()
             << " q: " << to_hex(road.Quality_code()) << " ly: " << to_binary(road.Layer_code(), 3)
             << " str: " << to_binary(road.Straightness(), 3) << " bx: " << road.BX()
             << std::endl;
@@ -248,6 +248,7 @@ bool PatternRecognition::is_zone_empty(
     const std::deque<EMTFHitCollection>& extended_conv_hits,
     const std::map<pattern_ref_t, int>& patt_lifetime_map
 ) const {
+  int izone = zone-1;
   int num_conv_hits = 0;
   int num_patts = 0;
 
@@ -262,7 +263,7 @@ bool PatternRecognition::is_zone_empty(
       if (conv_hits_it->Subsystem() == TriggerPrimitive::kRPC)
         continue;  // Don't use RPCs for pattern formation
 
-      if (conv_hits_it->Zone_code() & (1<<zone)) {  // hit belongs to this zone
+      if (conv_hits_it->Zone_code() & (1 << izone)) {  // hit belongs to this zone
         num_conv_hits += 1;
       }
     }  // end loop over conv_hits
@@ -285,6 +286,8 @@ void PatternRecognition::make_zone_image(
     const std::deque<EMTFHitCollection>& extended_conv_hits,
     PhiMemoryImage& image
 ) const {
+  int izone = zone-1;
+
   std::deque<EMTFHitCollection>::const_iterator ext_conv_hits_it  = extended_conv_hits.begin();
   std::deque<EMTFHitCollection>::const_iterator ext_conv_hits_end = extended_conv_hits.end();
 
@@ -296,7 +299,7 @@ void PatternRecognition::make_zone_image(
       if (conv_hits_it->Subsystem() == TriggerPrimitive::kRPC)
         continue;  // Don't use RPCs for pattern formation
 
-      if (conv_hits_it->Zone_code() & (1 << zone)) {  // hit belongs to this zone
+      if (conv_hits_it->Zone_code() & (1 << izone)) {  // hit belongs to this zone
         unsigned int layer = conv_hits_it->Station() - 1;
         unsigned int bit   = conv_hits_it->Zone_hit();
         image.set_bit(layer, bit);
@@ -412,8 +415,8 @@ void PatternRecognition::process_single_zone(
         road.set_quality_code ( quality_code );
 
         // Find max quality code in a given key_zhit
-        if (max_quality_code < road.Quality_code()) {
-          max_quality_code = road.Quality_code();
+        if (max_quality_code < quality_code) {
+          max_quality_code = quality_code;
           tmp_road = std::move(road);
         }
       }  // end if is_lifetime_up
@@ -425,7 +428,7 @@ void PatternRecognition::process_single_zone(
       roads.push_back(tmp_road);
     }
 
-  }  // end loop over zone_hits
+  }  // end loop over zone hits
 
 
   // Ghost cancellation logic by considering neighbor patterns
@@ -472,7 +475,6 @@ void PatternRecognition::process_single_zone(
   } quality_code_zero_pred;
 
   roads.erase(std::remove_if(roads.begin(), roads.end(), quality_code_zero_pred), roads.end());
-
 }
 
 void PatternRecognition::sort_single_zone(EMTFRoadCollection& roads) const {
@@ -505,6 +507,6 @@ void PatternRecognition::sort_single_zone(EMTFRoadCollection& roads) const {
 
   // Assign the winner variable
   for (unsigned iroad = 0; iroad < roads.size(); ++iroad) {
-    roads.at(iroad).set_winner ( iroad );
+    roads.at(iroad).set_winner( iroad );
   }
 }
