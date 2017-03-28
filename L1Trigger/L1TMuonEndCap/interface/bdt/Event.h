@@ -13,6 +13,8 @@
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
+namespace emtf {
+
 struct Event
 {
 
@@ -49,5 +51,7 @@ struct Event
   
     void resetPredictedValue(){ predictedValue = 0; }
 };
+
+} // end of emtf namespace
 
 #endif

@@ -6,6 +6,8 @@
 #include "Tree.h"
 #include "LossFunctions.h"
 
+namespace emtf {
+
 class Forest
 {
     public:
@@ -59,5 +61,7 @@ class Forest
         std::vector< std::vector<Event*> > subSample;
         std::vector<Tree*> trees;
 };
+
+} // end of emtf namespace
 
 #endif

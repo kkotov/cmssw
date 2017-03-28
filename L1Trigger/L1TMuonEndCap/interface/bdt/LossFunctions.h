@@ -13,6 +13,8 @@
 // ================ Define the Interface ==================
 //=========================================================
 
+namespace emtf {
+
 // Define the Interface
 class LossFunction
 {
@@ -220,5 +222,7 @@ class PercentErrorSquared : public LossFunction
         std::string name() { return "Percent_Error"; }
         int id(){ return 4; }
 };
+
+} // end of emtf namespace
 
 #endif

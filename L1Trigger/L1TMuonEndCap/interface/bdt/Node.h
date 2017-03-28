@@ -7,6 +7,8 @@
 #include <vector>
 #include "Event.h"
 
+namespace emtf {
+
 class Node
 {
     public:
@@ -75,5 +77,7 @@ class Node
 
         std::vector< std::vector<Event*> > events;
 };
+
+} // end of emtf namespace
 
 #endif
