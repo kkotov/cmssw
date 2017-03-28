@@ -1,7 +1,7 @@
 // Utilities.h
 
-#ifndef ADD_UTILITIES
-#define ADD_UTILITIES 
+#ifndef L1Trigger_L1TMuonEndCap_emtf_Utilities
+#define L1Trigger_L1TMuonEndCap_emtf_Utilities
 
 #include <vector>
 #include <string>

@@ -1,7 +1,7 @@
 // Node.h
 
-#ifndef ADD_NODE
-#define ADD_NODE
+#ifndef L1Trigger_L1TMuonEndCap_emtf_Node
+#define L1Trigger_L1TMuonEndCap_emtf_Node
 
 #include <string>
 #include <vector>

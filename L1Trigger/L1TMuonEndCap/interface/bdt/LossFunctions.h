@@ -2,8 +2,8 @@
 // Here we define the different loss functions that can be used
 // with the BDT system. 
 
-#ifndef ADD_LOSS
-#define ADD_LOSS
+#ifndef L1Trigger_L1TMuonEndCap_emtf_LossFunctions
+#define L1Trigger_L1TMuonEndCap_emtf_LossFunctions
 
 #include "Event.h"
 #include <string>

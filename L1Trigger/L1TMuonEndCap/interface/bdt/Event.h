@@ -2,8 +2,8 @@
 // ---------------------------Event.h------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-#ifndef ADD_EVENT
-#define ADD_EVENT
+#ifndef L1Trigger_L1TMuonEndCap_emtf_Event
+#define L1Trigger_L1TMuonEndCap_emtf_Event
 
 #include "TMath.h"
 #include <vector>
