@@ -19,7 +19,7 @@ import FWCore.ParameterSet.Config as cms
 
 
 
-# emtfParamsSource = cms.ESSource(
+# emtfForestsSource = cms.ESSource(
 # 	"EmptyESSource",
 # 	recordName = cms.string('L1TMuonEndCapForestRcd'),
 # 	iovIsRunNotTime = cms.bool(True),
@@ -27,6 +27,6 @@ import FWCore.ParameterSet.Config as cms
 # )
 
 # ##EMTF ESProducer. Fills CondFormats from XML files.
-# emtfParams = cms.ESProducer(
+# emtfForests = cms.ESProducer(
 # 	"L1TMuonEndCapForestESProducer",
 # )
