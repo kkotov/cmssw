@@ -51,10 +51,6 @@ L1TCaloParamsOnlineProd::readCaloLayer1OnlineSettings(l1t::CaloParamsHelper& par
     "layer1ECalScaleETBins",
     "layer1HCalScaleETBins",
     "layer1HFScaleETBins"
-    // Optional params
-    //"layer1ECalScalePhiBins",
-    //"layer1HCalScalePhiBins",
-    //"layer1HFScalePhiBins"
   };
   for (const auto param : expectedParams) {
     if ( conf.find(param) == conf.end() ) {
@@ -160,13 +156,6 @@ L1TCaloParamsOnlineProd::readCaloLayer2OnlineSettings(l1t::CaloParamsHelper& par
   }
 
   paramsHelper.setJetCalibrationLUT ( l1t::convertToLUT( conf["jetEnergyCalibLUT"].getVector<uint32_t>() ) );
-
-  if( etSumEttPUSLUT.length() )
-      paramsHelper.setEtSumEttPUSLUT    ( l1t::convertToLUT( conf[etSumEttPUSLUT].getVector<int>() ) );
-  if( etSumEcalSumPUSLUT.length() )
-      paramsHelper.setEtSumEcalSumPUSLUT( l1t::convertToLUT( conf[etSumEcalSumPUSLUT].getVector<int>() ) );
-  if( etSumMetPUSLUT.length() )
-      paramsHelper.setEtSumMetPUSLUT    ( l1t::convertToLUT( conf[etSumMetPUSLUT].getVector<int>() ) );
 
   paramsHelper.setEtSumEttCalibrationLUT    ( l1t::convertToLUT( conf["ET_energyCalibLUT"].getVector<int>() ) );
   paramsHelper.setEtSumEcalSumCalibrationLUT( l1t::convertToLUT( conf["ecalET_energyCalibLUT"].getVector<int>() ) );
